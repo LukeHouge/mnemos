@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: mnemos-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mnemos
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mnemos-backend
+    working_dir: /app
+    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    # Environment files loaded in order - later files override earlier ones
+    # TODO: For production: change .env.dev to .env.prod
+    env_file:
+      - ./backend/.env.dev
+      - ./backend/.env.secrets
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/mnemos
+
+  dev:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile.dev
+    container_name: mnemos-dev
+    volumes:
+      - .:/workspace
+      - /workspace/backend/.venv  # Exclude venv from mount
+    working_dir: /workspace
+    # Environment files loaded in order - later files override earlier ones
+    env_file:
+      - ./backend/.env.dev
+      - ./backend/.env.secrets
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/mnemos
+    # Keep container running for dev work
+    command: tail -f /dev/null
+
+volumes:
+  postgres_data:

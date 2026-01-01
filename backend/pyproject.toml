@@ -1,0 +1,166 @@
+[project]
+name = "mnemos"
+version = "0.1.0"
+description = "Second Brain for Receipts / Manuals / PDFs"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "sqlalchemy>=2.0.23",
+    "alembic>=1.12.1",
+    "asyncpg>=0.29.0",  # PostgreSQL async driver
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.1.0",
+    "pyright>=1.1.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+]
+
+[tool.ruff]
+# Set the maximum line length
+line-length = 100
+
+# Python version
+target-version = "py312"
+
+# Enable pyproject.toml support
+extend-exclude = [
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+]
+
+[tool.ruff.lint]
+# Enable specific rule sets
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T10", # flake8-debugger
+    "EM",  # flake8-errmsg
+    "ISC", # flake8-implicit-str-concat
+    "ICN", # flake8-import-conventions
+    "PIE", # flake8-pie
+    "PT",  # flake8-pytest-style
+    "Q",   # flake8-quotes
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "ERA", # eradicate
+    "PD",  # pandas-vet
+    "PGH", # pygrep-hooks
+    "PL",  # Pylint
+    "TRY", # tryceratops
+    "NPY", # NumPy-specific rules
+    "RUF", # Ruff-specific rules
+]
+
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "PLR0913", # too many arguments
+    "PLR0912", # too many branches
+    "TRY003", # avoid specifying long messages outside exception class
+]
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+# Indent with spaces
+indent-style = "space"
+# Respect magic trailing comma
+skip-magic-trailing-comma = false
+# Automatically detect the appropriate line ending
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+# Use ruff's import sorting
+known-first-party = ["app"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+
+[tool.pyright]
+include = ["app"]
+exclude = [
+    "**/__pycache__",
+    "**/.venv",
+    "**/venv",
+    "**/.mypy_cache",
+]
+
+# Type checking mode
+typeCheckingMode = "basic"
+
+# Python version
+pythonVersion = "3.12"
+
+# Python platform
+pythonPlatform = "Linux"
+
+# Report missing imports
+reportMissingImports = true
+
+# Report missing type stubs
+reportMissingTypeStubs = false
+
+# Report unused imports
+reportUnusedImport = true
+
+# Report unused variables
+reportUnusedVariable = true
+
+# Report unused class
+reportUnusedClass = true
+
+# Report unused function
+reportUnusedFunction = true
+
+# Report private usage
+reportPrivateUsage = "warning"
+
+# Report constant redefinition
+reportConstantRedefinition = "warning"
+
+# Report incomplete stub
+reportIncompleteStub = false
+
+# Report call in default initializer
+reportCallInDefaultInitializer = true
+
+# Report unnecessary isinstance
+reportUnnecessaryIsInstance = true
+
+# Report unnecessary cast
+reportUnnecessaryCast = true
+
+# Report unnecessary comparison
+reportUnnecessaryComparison = true
+
+# Report assert always true
+reportAssertAlwaysTrue = "warning"
+
+# Report self cls usage
+reportSelfClsParameterName = true
+
+# Report implicit string concatenation
+reportImplicitStringConcatenation = false
