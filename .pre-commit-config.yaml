@@ -1,0 +1,41 @@
+# Pre-commit hooks configuration
+# See https://pre-commit.com for more information
+
+repos:
+  # Ruff - Fast Python linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      # Run the linter
+      - id: ruff
+        args: [--fix]
+        files: ^backend/app/
+      # Run the formatter
+      - id: ruff-format
+        files: ^backend/app/
+
+  # Pyright - Local hook using project environment
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: bash -c 'cd backend && uv run pyright app/'
+        language: system
+        types: [python]
+        files: ^backend/app/
+        pass_filenames: false
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-json
+        exclude: ^\.vscode/settings\.json$  # VS Code uses JSONC (JSON with comments)
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: mixed-line-ending

@@ -43,6 +43,12 @@ Upload PDFs (warranties, invoices, travel docs, medical bills, dog docs, car ser
    - API docs: http://localhost:8000/docs
    - Health check: http://localhost:8000/health
 
+5. **Install pre-commit hooks (recommended):**
+   ```bash
+   just install-hooks
+   ```
+   This will automatically run linting and type checking before each commit.
+
 ## Development
 
 ### Available Commands
@@ -61,6 +67,8 @@ Run `just` or `just --list` to see all commands. Common ones:
 - `just lint` - Check code for linting issues
 - `just lint-fix` - Fix linting issues automatically
 - `just typecheck` - Run type checking with Pyright
+- `just install-hooks` - Install pre-commit hooks
+- `just pre-commit` - Run pre-commit hooks manually on all files
 
 ### Adding Dependencies
 
@@ -122,6 +130,41 @@ The project uses **Ruff** for linting, formatting, and import sorting, and **Pyr
 - Guarantees the correct Python version and environment
 - Ensures all dependencies are available
 - Works consistently across different systems
+
+**Inside the dev container:**
+```bash
+cd backend
+uv run ruff check app/        # Lint
+uv run ruff format app/        # Format
+uv run pyright app/            # Type check
+```
+
+### Pre-commit Hooks
+
+Pre-commit hooks automatically check your code before each commit:
+
+**Setup (one-time):**
+```bash
+just install-hooks
+```
+
+**What gets checked:**
+- Ruff linting and formatting (auto-fixes issues)
+- Pyright type checking (using project environment)
+- Trailing whitespace (auto-fixes)
+- End of file newlines (auto-fixes)
+- YAML/JSON/TOML syntax
+- Large file prevention
+
+**Manual run:**
+```bash
+just pre-commit  # Run on all files
+```
+
+**Skip hooks (when needed):**
+```bash
+git commit --no-verify
+```
 
 **IDE Integration:**
 - Ruff and Pyright are configured to run automatically in VS Code/Cursor

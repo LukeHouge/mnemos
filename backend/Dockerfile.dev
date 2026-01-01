@@ -9,6 +9,8 @@ RUN apt-get update && apt-get install -y \
     procps \
     net-tools \
     libatomic1 \
+    build-essential \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
@@ -28,4 +30,3 @@ WORKDIR /workspace
 
 # Default command - just keep container running
 CMD ["tail", "-f", "/dev/null"]
-

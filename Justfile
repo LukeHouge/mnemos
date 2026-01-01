@@ -73,6 +73,14 @@ shell-postgres:
 sync-deps:
     docker compose exec dev sh -c "cd backend && uv sync --extra dev"
 
+# Install pre-commit hooks
+install-hooks:
+    docker compose exec dev sh -c "cd backend && uv run pre-commit install"
+
+# Run pre-commit hooks on all files
+pre-commit:
+    docker compose exec dev sh -c "cd backend && uv run pre-commit run --all-files"
+
 # Add a new dependency (usage: just add-dep sqlalchemy)
 add-dep package:
     docker compose exec dev sh -c "cd backend && uv add {{package}}"
@@ -171,4 +179,3 @@ check-ports:
     else
         echo "✅ Port 5432 is free"
     fi
-

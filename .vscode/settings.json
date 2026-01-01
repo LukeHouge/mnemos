@@ -5,7 +5,7 @@
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.autoImportCompletions": true,
   "python.analysis.diagnosticMode": "workspace",
-  
+
   // Ruff settings (replaces pylint, flake8, black, isort)
   "ruff.enable": true,
   "ruff.codeAction.fixViolation": {
@@ -19,14 +19,14 @@
   "ruff.lint.enable": true,
   "ruff.format.args": [],
   "ruff.lint.args": [],
-  
+
   // Pyright settings
   "pyrightconfig.json": "backend/pyproject.toml",
   "python.analysis.diagnosticSeverityOverrides": {
     "reportMissingImports": "warning",
     "reportMissingTypeStubs": "none"
   },
-  
+
   // Editor settings
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
@@ -37,12 +37,12 @@
     },
     "editor.rulers": [100]
   },
-  
+
   // File associations
   "files.associations": {
     "*.py": "python"
   },
-  
+
   // Exclude patterns
   "files.exclude": {
     "**/__pycache__": true,
@@ -51,7 +51,7 @@
     "**/.ruff_cache": true,
     "**/.mypy_cache": true
   },
-  
+
   // Search exclude
   "search.exclude": {
     "**/__pycache__": true,
@@ -63,7 +63,7 @@
     "**/.mypy_cache": true,
     "**/node_modules": true
   },
-  
+
   // Watcher exclude
   "files.watcherExclude": {
     "**/.venv/**": true,
@@ -74,4 +74,3 @@
     "**/.mypy_cache/**": true
   }
 }
-
