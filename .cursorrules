@@ -1,0 +1,161 @@
+# Mnemos Project - Coding Standards
+
+## Python Style
+
+### Imports
+- **NEVER use inline imports** - All imports must be at the top of the file
+- **Use explicit imports** - `from app.models.ai import ChatRequest` not `from app.models import ChatRequest`
+- **Avoid `__all__`** - Only use when absolutely necessary (e.g., public API)
+- **Import order**: stdlib, third-party, local (enforced by Ruff)
+
+### Code Organization
+- **Separation of concerns**:
+  - `app/models/` - Pydantic schemas only
+  - `app/routes/` - HTTP route handlers only (thin layer)
+  - `app/services/` - Business logic and external service clients
+- **Keep routes thin** - Move logic to services
+- **Models in separate files** - Never define models in route files
+
+### Error Handling
+- **Log errors, return generic messages** - Never expose internal details to users
+- **Use proper HTTP status codes**:
+  - `503` - Service Unavailable (service not configured)
+  - `502` - Bad Gateway (external API error)
+  - `500` - Internal Server Error (unexpected)
+- **Never mention file paths in error responses** - No `.env.secrets`, internal paths, etc.
+
+### Type Hints
+- **Always use type hints** for function parameters and return values
+- **Use modern syntax**: `list[str]` not `List[str]`, `dict[str, int]` not `Dict[str, int]`
+- **Use `str | None`** not `Optional[str]`
+
+### Logging
+- **Use structured logging** with `logger.info/error`
+- **Add context with `extra={}`** for important fields
+- **Log at appropriate levels**:
+  - `DEBUG` - Detailed diagnostic info
+  - `INFO` - General informational messages
+  - `WARNING` - Warning messages
+  - `ERROR` - Error messages with exceptions
+
+### Configuration
+- **Use Pydantic BaseSettings** for configuration
+- **Environment variables** via Docker Compose, not hardcoded in code
+- **Sensible defaults** for dev/test, required values for production
+- **No secrets in code** - Use environment variables
+
+## Testing
+
+### Organization
+```
+tests/
+├── unit/                      # Fast, mocked tests
+│   ├── test_*_routes.py      # Route tests (mocked services)
+│   ├── test_*_service.py     # Service tests (mocked clients)
+│   └── test_*_models.py      # Model validation tests
+└── integration/               # Real external service tests
+    └── test_*_service.py     # Real API calls
+```
+
+### Test Style
+- **No inline imports in tests** - All imports at the top
+- **One concept per test** - Test one thing clearly
+- **Descriptive names** - `test_chat_returns_error_when_service_unavailable`
+- **Arrange-Act-Assert** pattern
+- **Mark integration tests** - `@pytest.mark.integration`
+- **Skip tests requiring credentials** - `@pytest.mark.skipif(not os.getenv("API_KEY"))`
+
+### Mocking
+- **Mock external dependencies** in unit tests
+- **Use `@patch` decorator** with full paths
+- **Mock at service layer** not at route layer
+
+## FastAPI Patterns
+
+### Dependency Injection
+```python
+@router.post("/endpoint")
+async def endpoint(
+    request: RequestModel,
+    service: Service = Depends(get_service),
+):
+    ...
+```
+
+### Response Models
+- **Always define response models** with Pydantic
+- **Use Field() for validation** and documentation
+- **Add descriptions** for API docs
+
+### Route Organization
+- **Group by feature** - `/ai/`, `/documents/`, `/users/`
+- **Use router tags** - `router = APIRouter(prefix="/ai", tags=["AI"])`
+- **RESTful naming** where appropriate
+
+## Documentation
+
+### Docstrings
+- **Module docstrings** for all modules
+- **Function docstrings** for public functions
+- **Class docstrings** for all classes
+- **Use triple quotes** even for one-line docstrings
+
+### Comments
+- **Explain WHY, not WHAT** - Code should be self-explanatory
+- **TODO comments** should reference issue numbers or be tracked
+  - Format: `TODO(#123): Description` or `TODO: Description (track in issue)`
+  - Use `just todos` to find all TODOs
+  - CI will check for TODOs in PRs
+- **Comment types:**
+  - `TODO:` - Something to do later
+  - `FIXME:` - Something broken that needs fixing
+  - `XXX:` - Dangerous/problematic code that needs attention
+  - `HACK:` - Temporary workaround
+  - `NOTE:` - Important information
+- **No commented-out code** - Use git history
+
+## Git & CI
+
+### Commits
+- **Descriptive commit messages** - What and why
+- **Small, focused commits** - One logical change per commit
+- **Never commit secrets** - Check before committing
+
+### CI/CD
+- **No hardcoded secrets** in CI configuration
+- **Use environment variables** for sensitive data
+- **Fast unit tests in CI** - Save integration tests for optional runs
+
+## Project-Specific
+
+### OpenAI Integration
+- **Service layer** - All OpenAI logic in `openai_service.py`
+- **Handle errors gracefully** - OpenAI can fail, timeout, rate limit
+- **Log token usage** - Track costs
+
+### Models
+- **Domain-specific files** - `ai.py`, `health.py`, etc.
+- **Common models** in `common.py` for reusable types
+- **Validation** - Use Pydantic Field validators
+
+### YAGNI (You Aren't Gonna Need It)
+- **Don't add features speculatively** - Wait until needed
+- **Remove unused code** - Don't leave it "just in case"
+- **Simplify when possible** - Less code = less bugs
+
+## Tools
+
+- **Ruff** - Linting and formatting (configured in `pyproject.toml`)
+- **Pyright** - Type checking (configured in `pyproject.toml`)
+- **pytest** - Testing framework
+- **uv** - Fast package management
+- **just** - Command runner (see `Justfile`)
+
+## Commands
+
+```bash
+just check        # Lint and type check
+just format       # Format code
+just test         # Run unit tests
+just test-all     # Run all tests (including integration)
+```
