@@ -1,5 +1,7 @@
 # Mnemos
 
+[![CI](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml)
+
 **Second Brain for Receipts / Manuals / PDFs** - A personal RAG system for managing documents with intelligent search and chat.
 
 ## What It Is
@@ -67,8 +69,8 @@ Run `just` or `just --list` to see all commands. Common ones:
 - `just lint` - Check code for linting issues
 - `just lint-fix` - Fix linting issues automatically
 - `just typecheck` - Run type checking with Pyright
-- `just install-hooks` - Install pre-commit hooks
-- `just pre-commit` - Run pre-commit hooks manually on all files
+- `just install-hooks` - Install pre-commit hooks (optional)
+- `just pre-commit` - Run pre-commit hooks manually (optional)
 
 ### Adding Dependencies
 
@@ -139,32 +141,36 @@ uv run ruff format app/        # Format
 uv run pyright app/            # Type check
 ```
 
-### Pre-commit Hooks
+### Code Quality Checks
 
-Pre-commit hooks automatically check your code before each commit:
+**Before committing, run:**
+```bash
+just check    # Lint + type check
+just format   # Auto-format code
+```
+
+**GitHub Actions CI:**
+Every push and PR automatically runs:
+- Ruff linting and formatting checks
+- Pyright type checking
+- Tests with PostgreSQL
+
+See `.github/workflows/ci.yml` for configuration.
+
+### Optional: Pre-commit Hooks
+
+If you want automatic checks on `git commit`, you can set up pre-commit hooks:
 
 **Setup (one-time):**
 ```bash
+# From inside dev container
+just shell
 just install-hooks
 ```
 
-**What gets checked:**
-- Ruff linting and formatting (auto-fixes issues)
-- Pyright type checking (using project environment)
-- Trailing whitespace (auto-fixes)
-- End of file newlines (auto-fixes)
-- YAML/JSON/TOML syntax
-- Large file prevention
-
-**Manual run:**
-```bash
-just pre-commit  # Run on all files
-```
-
-**Skip hooks (when needed):**
-```bash
-git commit --no-verify
-```
+**Note:** Pre-commit hooks run inside the dev container, so you'll need to:
+- Commit from inside the container (`just shell` then `git commit`), OR
+- Install pre-commit on your host: `brew install pre-commit && pre-commit install`
 
 **IDE Integration:**
 - Ruff and Pyright are configured to run automatically in VS Code/Cursor
