@@ -3,8 +3,6 @@ name: Check TODOs
 on:
   pull_request:
     branches: [main, master, develop]
-  push:
-    branches: [main, master, develop]
 
 jobs:
   check-todos:
