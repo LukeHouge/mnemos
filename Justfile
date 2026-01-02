@@ -176,29 +176,29 @@ migrate-create message:
 db-status:
     docker compose exec postgres psql -U postgres -d mnemos -c "\dt"
 
-# Check code quality (lint + type check)
+# Check code quality (lint + format check + type check)
 check:
-    docker compose exec dev sh -c "cd backend && uv run ruff check app/ && uv run pyright app/"
+    docker compose exec dev sh -c "cd backend && uv run --extra dev ruff check app/ && uv run --extra dev ruff format --check app/ && uv run --extra dev pyright app/"
 
 # Format code (formatting + import sorting)
 format:
-    docker compose exec dev sh -c "cd backend && uv run ruff format app/ && uv run ruff check --fix app/"
+    docker compose exec dev sh -c "cd backend && uv run --extra dev ruff format app/ && uv run --extra dev ruff check --fix app/"
 
 # Lint code (check only, no fixes)
 lint:
-    docker compose exec dev sh -c "cd backend && uv run ruff check app/"
+    docker compose exec dev sh -c "cd backend && uv run --extra dev ruff check app/"
 
 # Fix linting issues automatically
 lint-fix:
-    docker compose exec dev sh -c "cd backend && uv run ruff check --fix app/"
+    docker compose exec dev sh -c "cd backend && uv run --extra dev ruff check --fix app/"
 
 # Sort imports
 imports:
-    docker compose exec dev sh -c "cd backend && uv run ruff check --select I --fix app/"
+    docker compose exec dev sh -c "cd backend && uv run --extra dev ruff check --select I --fix app/"
 
 # Type check
 typecheck:
-    docker compose exec dev sh -c "cd backend && uv run pyright app/"
+    docker compose exec dev sh -c "cd backend && uv run --extra dev pyright app/"
 
 # Rebuild and restart backend (useful after Dockerfile changes)
 rebuild:

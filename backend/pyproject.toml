@@ -81,9 +81,6 @@ select = [
 
 ignore = [
     "E501",  # line too long (handled by formatter)
-    "PLR0913", # too many arguments
-    "PLR0912", # too many branches
-    "TRY003", # avoid specifying long messages outside exception class
     "B008", # Do not perform function call in argument defaults (FastAPI Depends pattern is safe)
     "TRY301", # Abstract raise to inner function (not needed for simple error handling)
     "PLW0603", # Using global statement (needed for singleton pattern)
@@ -105,7 +102,7 @@ known-first-party = ["app"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Allow unused imports in __init__.py
-"app/routes/*.py" = ["B008"]  # FastAPI Depends() in defaults is the standard pattern
+"app/routes/*.py" = ["B008", "PT028"]  # FastAPI Depends() in defaults is the standard pattern, PT028 is false positive for route handlers
 
 [tool.pyright]
 include = ["app"]
