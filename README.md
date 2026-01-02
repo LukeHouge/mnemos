@@ -21,20 +21,20 @@ Upload PDFs (warranties, invoices, travel docs, medical bills, dog docs, car ser
 
 ## Quick Start
 
-1. **Create secrets file:**
-   ```bash
-   cp backend/.env.secrets.example backend/.env.secrets
-   # Edit backend/.env.secrets and set your SECRET_KEY
-   ```
-
-2. **Start services:**
+1. **Start services:**
    ```bash
    just dev
    ```
    This will:
    - Build the Docker images (first time only)
-   - Start postgres, backend, and dev containers
+   - Start postgres and dev containers
    - Install dependencies in the dev container
+
+2. **Run the app with hot reload:**
+   ```bash
+   just run-dev
+   ```
+   This starts the FastAPI server with auto-reload on file changes.
 
 3. **If using Cursor/VS Code:**
    - Open the project in Cursor/VS Code
@@ -63,7 +63,14 @@ Run `just` or `just --list` to see all commands. Common ones:
 - `just run-dev` - Run backend server with hot reload in dev container
 - `just logs-backend` - View backend logs (production container)
 - `just logs-dev` - View dev container logs
-- `just test` - Run tests (in dev container)
+- `just test` - Run unit tests (fast, no external services)
+- `just test-all` - Run all tests including integration tests
+- `just test-integration` - Run integration tests only (requires API keys)
+- `just test-cov` - Generate coverage report (opens in browser)
+- `just test-file tests/unit/test_ai_routes.py` - Run specific test file
+- `just test-match "chat"` - Run tests matching pattern
+- `just todos` - Find all TODOs/FIXMEs/XXX in codebase
+- `just todo-stats` - Count TODOs by type
 - `just check` - Run all code quality checks (lint + type check)
 - `just format` - Format code and fix auto-fixable issues
 - `just lint` - Check code for linting issues
@@ -103,13 +110,24 @@ mnemos/
 
 ### Container Architecture
 
-The project uses **separate containers** for development and production:
+The project uses a clean separation:
 
-- **`dev` container**: Your development environment with dev tools, mounted volumes for live editing
-- **`backend` container**: Production-ready FastAPI server (no dev tools, optimized for production)
+- **`dev` container**: Your primary development environment
+  - Dev tools and dependencies
+  - Mounted volumes for live editing
+  - Run the app with `just run-dev` (hot reload)
+- **`backend` container**: Production-like container (optional)
+  - Only used for testing production behavior
+  - Start with `just start-backend` when needed
 - **`postgres` container**: PostgreSQL database
 
-When using Cursor/VS Code with the devcontainer, you'll be working in the `dev` container. The `backend` container runs the production server separately.
+**Development workflow:**
+1. `just dev` - Starts postgres + dev container
+2. `just run-dev` - Runs app from dev container (hot reload)
+3. Edit code → auto-reloads!
+
+**Testing production:**
+- `just start-backend` - Test production-like behavior
 
 ### Code Quality Tools
 
@@ -190,18 +208,13 @@ The project uses a clean environment file strategy:
 - `backend/.env.secrets` - **Only secrets** (gitignored, **required**)
 - Later: `backend/.env.prod` - Production config (no secrets)
 
-**Setup:**
-1. Copy the example secrets file:
-   ```bash
-   cp backend/.env.secrets.example backend/.env.secrets
-   ```
+**Setup (optional - for OpenAI features):**
 
-2. Edit `backend/.env.secrets` and set your `SECRET_KEY`:
-   ```bash
-   # Generate a random secret key
-   python -c "import secrets; print(f'SECRET_KEY={secrets.token_urlsafe(32)}')"
-   # Copy the output to backend/.env.secrets
-   ```
+Create `backend/.env.secrets` with your OpenAI API key:
+```bash
+cp backend/.env.secrets.example backend/.env.secrets
+# Edit and add: OPENAI_API_KEY=sk-your-key-here
+```
 
 **How it works:**
 - Docker Compose loads `.env.dev` and `.env.secrets` files

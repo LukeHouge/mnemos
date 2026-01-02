@@ -5,7 +5,8 @@
 default:
     @just --list
 
-# Start development environment (all services including dev container)
+# Start development environment (postgres + dev container)
+# Backend container is NOT started by default - use 'just run-dev' to run the app
 dev:
     #!/usr/bin/env bash
     set -e
@@ -16,15 +17,31 @@ dev:
         echo "⚠️  Found 'db' container using port 5432. Stopping it..."
         docker stop db || true
     fi
-    echo "🚀 Starting services..."
-    docker compose up -d
-    echo "✅ Services started"
-    echo "📚 API docs: http://localhost:8000/docs"
-    echo "🔍 Health check: http://localhost:8000/health"
-    echo "💡 Use 'just shell' to open a shell in the dev container"
+    echo "🚀 Starting postgres and dev container..."
+    docker compose up -d postgres dev
+    echo "✅ Development environment ready"
+    echo "💡 Run 'just run-dev' to start the app with hot reload"
+    echo "💡 Or 'just shell' to open a shell in the dev container"
+
+# Start backend container (production-like, for testing production behavior)
+start-backend:
+    docker compose --profile production up -d backend
+    @echo "✅ Backend started (production mode, no hot reload)"
+    @echo "📚 API docs: http://localhost:8000/docs"
+
+# Stop backend container
+stop-backend:
+    docker compose stop backend
+    @echo "✅ Backend stopped"
 
 # Run backend server in dev container (with hot reload)
 run-dev:
+    #!/usr/bin/env bash
+    set -e
+    echo "🚀 Starting dev server with hot reload..."
+    echo "📝 Edit files and they'll auto-reload!"
+    echo "📚 API docs: http://localhost:8000/docs"
+    echo "🛑 Press Ctrl+C to stop"
     docker compose exec dev sh -c "cd backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 # Build Docker images
@@ -91,13 +108,51 @@ add-dev package:
     docker compose exec dev sh -c "cd backend && uv add --dev {{package}}"
     @echo "✅ Added {{package}} as dev dependency."
 
-# Run tests
+# Run unit tests (fast, no external services)
 test:
+    docker compose exec dev sh -c "cd backend && uv run pytest tests/unit/ -v"
+
+# Run all tests including integration tests (requires OPENAI_API_KEY)
+test-all:
     docker compose exec dev sh -c "cd backend && uv run pytest"
 
-# Run tests with coverage
+# Run tests with coverage report
 test-cov:
-    docker compose exec dev sh -c "cd backend && uv run pytest --cov=app --cov-report=html"
+    docker compose exec dev sh -c "cd backend && uv run pytest tests/unit/ --cov=app --cov-report=html --cov-report=term"
+    @echo "📊 Coverage report generated at backend/htmlcov/index.html"
+
+# Run only integration tests (requires API keys)
+test-integration:
+    docker compose exec dev sh -c "cd backend && uv run pytest tests/integration/ -v"
+
+# Run specific test file
+test-file file:
+    docker compose exec dev sh -c "cd backend && uv run pytest {{file}} -v"
+
+# Run tests matching a pattern
+test-match pattern:
+    docker compose exec dev sh -c "cd backend && uv run pytest -k '{{pattern}}' -v"
+
+# Find all TODOs, FIXMEs, and XXX comments in the codebase
+todos:
+    #!/usr/bin/env bash
+    echo "📋 Searching for TODOs, FIXMEs, XXX, HACK, and NOTE comments..."
+    echo ""
+    echo "Legend:"
+    echo "  TODO:  Something to do later"
+    echo "  FIXME: Something broken that needs fixing"
+    echo "  XXX:   Dangerous/problematic code"
+    echo "  HACK:  Temporary workaround"
+    echo "  NOTE:  Important information"
+    echo ""
+    docker compose exec dev sh -c "cd /workspace && grep -rn --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' -E '(TODO|FIXME|XXX|HACK|NOTE):' . 2>/dev/null | grep -v '.venv' | grep -v '__pycache__' | grep -v '.git' | grep -v 'node_modules' | grep -v '.pytest_cache' | grep -v '.ruff_cache' | grep -v '.mypy_cache' | grep -v 'uv.lock' | grep -v 'package-lock.json' | grep -v 'yarn.lock' | grep -v '^\./\.vscode' | grep -v '^\./\.github/workflows' | sort" || echo "No TODOs found"
+
+# Count TODOs by type
+todo-stats:
+    #!/usr/bin/env bash
+    echo "📊 TODO Statistics:"
+    echo ""
+    docker compose exec dev sh -c "cd /workspace && echo 'TODO:' && grep -r --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' 'TODO:' . 2>/dev/null | grep -v '.venv' | grep -v '__pycache__' | grep -v '.pytest_cache' | grep -v '.ruff_cache' | grep -v '.mypy_cache' | grep -v 'uv.lock' | grep -v 'package-lock.json' | grep -v 'yarn.lock' | grep -v '^\./\.vscode' | grep -v '^\./\.github/workflows' | wc -l && echo 'FIXME:' && grep -r --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' 'FIXME:' . 2>/dev/null | grep -v '.venv' | grep -v '__pycache__' | grep -v '.pytest_cache' | grep -v '.ruff_cache' | grep -v '.mypy_cache' | grep -v 'uv.lock' | grep -v 'package-lock.json' | grep -v 'yarn.lock' | grep -v '^\./\.vscode' | grep -v '^\./\.github/workflows' | wc -l && echo 'XXX:' && grep -r --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' 'XXX:' . 2>/dev/null | grep -v '.venv' | grep -v '__pycache__' | grep -v '.pytest_cache' | grep -v '.ruff_cache' | grep -v '.mypy_cache' | grep -v 'uv.lock' | grep -v 'package-lock.json' | grep -v 'yarn.lock' | grep -v '^\./\.vscode' | grep -v '^\./\.github/workflows' | wc -l"
 
 # Clean up: remove containers and volumes
 clean:
