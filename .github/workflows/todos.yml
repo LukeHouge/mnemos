@@ -16,35 +16,53 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history to compare branches
 
-      - name: Find TODOs
+      - name: Find new/modified TODOs in PR
         id: find-todos
         run: |
-          echo "📋 Checking for TODOs, FIXMEs, and XXX comments..."
+          echo "📋 Checking for new or modified TODOs, FIXMEs, and XXX comments in PR..."
           echo ""
 
-          # Find all TODOs (excluding common ignore patterns and config directories)
-          TODOS=$(grep -rn --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' \
-            -E '(TODO|FIXME|XXX|HACK|NOTE):' . 2>/dev/null | \
-            grep -v '.venv' | \
-            grep -v '__pycache__' | \
-            grep -v '.git' | \
-            grep -v 'node_modules' | \
-            grep -v '.pytest_cache' | \
-            grep -v '.ruff_cache' | \
-            grep -v '.mypy_cache' | \
-            grep -v 'uv.lock' | \
-            grep -v 'package-lock.json' | \
-            grep -v 'yarn.lock' | \
-            grep -v '^\./\.vscode' | \
-            grep -v '^\./\.github/workflows' | \
-            sort || true)
+          # Get base branch (default to main)
+          BASE_BRANCH="${GITHUB_BASE_REF:-main}"
+
+          # Fetch base branch for comparison
+          git fetch origin "$BASE_BRANCH:$BASE_BRANCH" || true
+
+          # Find TODOs only in added/modified lines (not pre-existing)
+          # Use git diff to find lines that were added or changed
+          # Format: file:line:content (strip leading whitespace for readability)
+          TODOS=$(git diff "$BASE_BRANCH...HEAD" --unified=0 | \
+            awk '
+              BEGIN { file = ""; line = 0 }
+              /^diff --git/ { file = ""; next }
+              /^\+{3} / {
+                file = $2;
+                gsub(/^a\//, "", file);
+                gsub(/^b\//, "", file);
+                next
+              }
+              /^@@/ {
+                match($0, /\+[0-9]+/);
+                if (RSTART > 0) line = substr($0, RSTART+1, RLENGTH-1);
+                next
+              }
+              /^\+.*(TODO|FIXME|XXX|HACK|NOTE):/ {
+                content = $0;
+                gsub(/^\+[[:space:]]*/, "", content);
+                gsub(/^[[:space:]]+/, "", content);
+                if (file && line) print file ":" line ":" content;
+                line++
+              }
+            ' || true)
 
           if [ -z "$TODOS" ]; then
-            echo "✅ No TODOs found!"
+            echo "✅ No new or modified TODOs found in PR!"
             echo "has_todos=false" >> $GITHUB_OUTPUT
           else
-            echo "⚠️  Found TODOs/FIXMEs/XXX comments:"
+            echo "⚠️  Found new or modified TODOs/FIXMEs/XXX comments:"
             echo ""
             echo "$TODOS"
             echo ""
@@ -61,38 +79,137 @@ jobs:
             echo "  XXX: $XXX_COUNT"
           fi
 
-      - name: Comment on PR (if TODOs found)
-        if: github.event_name == 'pull_request' && steps.find-todos.outputs.has_todos == 'true'
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
             const { execSync } = require('child_process');
 
-            // Get list of TODOs
-            const todos = execSync(`
-              grep -rn --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' \
-                -E '(TODO|FIXME|XXX|HACK|NOTE):' . 2>/dev/null | \
-              grep -v '.venv' | grep -v '__pycache__' | grep -v '.git' | \
-              grep -v 'node_modules' | grep -v '.pytest_cache' | grep -v '.ruff_cache' | \
-              grep -v '.mypy_cache' | grep -v 'uv.lock' | grep -v 'package-lock.json' | grep -v 'yarn.lock' | \
-              grep -v '^\./\.vscode' | grep -v '^\./\.github/workflows' | sort
-            `, { encoding: 'utf-8' });
+            // Get base branch
+            const baseBranch = process.env.GITHUB_BASE_REF || 'main';
 
-            const body = `## 📋 TODOs Found in This PR
+            // Find TODOs only in added/modified lines using git diff
+            // Format: file:line:content (strip leading whitespace for readability)
+            let todos = '';
+            try {
+              todos = execSync(
+                `git diff ${baseBranch}...HEAD --unified=0 | awk '
+                  BEGIN { file = ""; line = 0 }
+                  /^diff --git/ { file = ""; next }
+                  /^\\+\\+\\+ / { file = $2; gsub(/^a\\//, "", file); gsub(/^b\\//, "", file); next }
+                  /^@@/ { match($0, /\\+[0-9]+/); if (RSTART > 0) line = substr($0, RSTART+1, RLENGTH-1); next }
+                  /^\\+.*(TODO|FIXME|XXX|HACK|NOTE):/ { content = $0; gsub(/^\\+[[:space:]]*/, "", content); gsub(/^[[:space:]]+/, "", content); if (file && line) print file ":" line ":" content; line++ }
+                '`,
+                { encoding: 'utf-8' }
+              ).trim();
+            } catch (error) {
+              console.log('Error finding TODOs:', error.message);
+              todos = '';
+            }
 
-            The following TODO/FIXME/XXX comments were found:
+            // Find existing comment from this bot
+            // Check both issue comments and review comments
+            const [issueComments, reviewComments] = await Promise.all([
+              github.rest.issues.listComments({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              }),
+              github.rest.pulls.listReviewComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+              }).catch(() => ({ data: [] })) // Review comments might not exist
+            ]);
 
-            \`\`\`
-            ${todos}
-            \`\`\`
+            // Mark comments with their source type
+            const markedIssueComments = issueComments.data.map(c => ({ ...c, _source: 'issue' }));
+            const markedReviewComments = reviewComments.data.map(c => ({ ...c, _source: 'review' }));
+            const allComments = [...markedIssueComments, ...markedReviewComments];
 
-            **Note:** This is informational. Please ensure TODOs are tracked in issues or removed before merging.
-            `;
+            console.log(`Found ${issueComments.data.length} issue comments and ${reviewComments.data.length} review comments (${allComments.length} total)`);
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
+            // Log all comments for debugging
+            if (allComments.length > 0) {
+              console.log('All comments:');
+              allComments.forEach(comment => {
+                console.log(`  - ID: ${comment.id}, User: ${comment.user?.login || 'unknown'} (${comment.user?.type || 'unknown'}), Source: ${comment._source}, Body preview: ${(comment.body || '').substring(0, 50)}...`);
+              });
+            }
+
+            // Find bot comment - check for bot type OR GitHub Actions bot login
+            const botComment = allComments.find(comment => {
+              const isBot = comment.user?.type === 'Bot' ||
+                           comment.user?.login === 'github-actions[bot]' ||
+                           (comment.user?.login && comment.user.login.includes('[bot]'));
+              const hasTodoHeader = comment.body && comment.body.includes('📋 New or Modified TODOs in This PR');
+              if (isBot && hasTodoHeader) {
+                console.log(`Found matching bot comment: ID ${comment.id}, User: ${comment.user?.login}, Source: ${comment._source}`);
+              }
+              return isBot && hasTodoHeader;
             });
+
+            if (botComment) {
+              console.log(`Found existing bot comment (ID: ${botComment.id}, Source: ${botComment._source})`);
+            } else {
+              console.log('No existing bot comment found matching criteria');
+            }
+
+            // Check if todos is empty (no TODOs found)
+            if (!todos || todos.length === 0) {
+              // No TODOs found - delete existing comment if it exists
+              if (botComment) {
+                console.log(`No TODOs found, deleting existing comment (ID: ${botComment.id}, Source: ${botComment._source})...`);
+                try {
+                  // Use the source type we tracked
+                  if (botComment._source === 'review') {
+                    await github.rest.pulls.deleteReviewComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      comment_id: botComment.id,
+                    });
+                    console.log('Review comment deleted successfully');
+                  } else {
+                    await github.rest.issues.deleteComment({
+                      comment_id: botComment.id,
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                    });
+                    console.log('Issue comment deleted successfully');
+                  }
+                } catch (error) {
+                  console.error('Error deleting comment:', error.message);
+                  console.error('Error details:', JSON.stringify(error, null, 2));
+                  throw error;
+                }
+              } else {
+                console.log('No TODOs found and no existing comment to delete');
+              }
+              return;
+            }
+
+            const body = '## 📋 New or Modified TODOs in This PR\n\n' +
+              'The following TODO/FIXME/XXX comments were **added or modified** in this PR (pre-existing TODOs are ignored):\n\n' +
+              '```\n' +
+              todos +
+              '\n```\n\n' +
+              '**Note:** This is informational. Please ensure TODOs are tracked in issues or removed before merging.';
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
