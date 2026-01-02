@@ -16,35 +16,33 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history to compare branches
 
-      - name: Find TODOs
+      - name: Find new/modified TODOs in PR
         id: find-todos
         run: |
-          echo "📋 Checking for TODOs, FIXMEs, and XXX comments..."
+          echo "📋 Checking for new or modified TODOs, FIXMEs, and XXX comments in PR..."
           echo ""
 
-          # Find all TODOs (excluding common ignore patterns and config directories)
-          TODOS=$(grep -rn --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' \
-            -E '(TODO|FIXME|XXX|HACK|NOTE):' . 2>/dev/null | \
-            grep -v '.venv' | \
-            grep -v '__pycache__' | \
-            grep -v '.git' | \
-            grep -v 'node_modules' | \
-            grep -v '.pytest_cache' | \
-            grep -v '.ruff_cache' | \
-            grep -v '.mypy_cache' | \
-            grep -v 'uv.lock' | \
-            grep -v 'package-lock.json' | \
-            grep -v 'yarn.lock' | \
-            grep -v '^\./\.vscode' | \
-            grep -v '^\./\.github/workflows' | \
-            sort || true)
+          # Get base branch (default to main)
+          BASE_BRANCH="${GITHUB_BASE_REF:-main}"
+
+          # Fetch base branch for comparison
+          git fetch origin "$BASE_BRANCH:$BASE_BRANCH" || true
+
+          # Find TODOs only in added/modified lines (not pre-existing)
+          # Use git diff to find lines that were added or changed
+          TODOS=$(git diff "$BASE_BRANCH...HEAD" --unified=0 | \
+            grep -E '^\+.*(TODO|FIXME|XXX|HACK|NOTE):' | \
+            grep -v '^+++' | \
+            sed 's/^+//' || true)
 
           if [ -z "$TODOS" ]; then
-            echo "✅ No TODOs found!"
+            echo "✅ No new or modified TODOs found in PR!"
             echo "has_todos=false" >> $GITHUB_OUTPUT
           else
-            echo "⚠️  Found TODOs/FIXMEs/XXX comments:"
+            echo "⚠️  Found new or modified TODOs/FIXMEs/XXX comments:"
             echo ""
             echo "$TODOS"
             echo ""
@@ -66,29 +64,27 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
             const { execSync } = require('child_process');
 
-            // Get list of TODOs
-            const todos = execSync(`
-              grep -rn --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' \
-                -E '(TODO|FIXME|XXX|HACK|NOTE):' . 2>/dev/null | \
-              grep -v '.venv' | grep -v '__pycache__' | grep -v '.git' | \
-              grep -v 'node_modules' | grep -v '.pytest_cache' | grep -v '.ruff_cache' | \
-              grep -v '.mypy_cache' | grep -v 'uv.lock' | grep -v 'package-lock.json' | grep -v 'yarn.lock' | \
-              grep -v '^\./\.vscode' | grep -v '^\./\.github/workflows' | sort
-            `, { encoding: 'utf-8' });
+            // Get base branch
+            const baseBranch = process.env.GITHUB_BASE_REF || 'main';
 
-            const body = `## 📋 TODOs Found in This PR
+            // Find TODOs only in added/modified lines using git diff
+            const todos = execSync(
+              `git diff ${baseBranch}...HEAD --unified=0 | grep -E '^\\+.*(TODO|FIXME|XXX|HACK|NOTE):' | grep -v '^+++' | sed 's/^+//'`,
+              { encoding: 'utf-8' }
+            ).trim();
 
-            The following TODO/FIXME/XXX comments were found:
+            if (!todos) {
+              return;
+            }
 
-            \`\`\`
-            ${todos}
-            \`\`\`
-
-            **Note:** This is informational. Please ensure TODOs are tracked in issues or removed before merging.
-            `;
+            const body = '## 📋 New or Modified TODOs in This PR\n\n' +
+              'The following TODO/FIXME/XXX comments were **added or modified** in this PR (pre-existing TODOs are ignored):\n\n' +
+              '```\n' +
+              todos +
+              '\n```\n\n' +
+              '**Note:** This is informational. Please ensure TODOs are tracked in issues or removed before merging.';
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
