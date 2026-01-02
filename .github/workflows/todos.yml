@@ -109,43 +109,78 @@ jobs:
             }
 
             // Find existing comment from this bot
-            const comments = await github.rest.issues.listComments({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
+            // Check both issue comments and review comments
+            const [issueComments, reviewComments] = await Promise.all([
+              github.rest.issues.listComments({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              }),
+              github.rest.pulls.listReviewComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+              }).catch(() => ({ data: [] })) // Review comments might not exist
+            ]);
 
-            console.log(`Found ${comments.data.length} total comments on this PR`);
+            // Mark comments with their source type
+            const markedIssueComments = issueComments.data.map(c => ({ ...c, _source: 'issue' }));
+            const markedReviewComments = reviewComments.data.map(c => ({ ...c, _source: 'review' }));
+            const allComments = [...markedIssueComments, ...markedReviewComments];
+
+            console.log(`Found ${issueComments.data.length} issue comments and ${reviewComments.data.length} review comments (${allComments.length} total)`);
+
+            // Log all comments for debugging
+            if (allComments.length > 0) {
+              console.log('All comments:');
+              allComments.forEach(comment => {
+                console.log(`  - ID: ${comment.id}, User: ${comment.user?.login || 'unknown'} (${comment.user?.type || 'unknown'}), Source: ${comment._source}, Body preview: ${(comment.body || '').substring(0, 50)}...`);
+              });
+            }
 
             // Find bot comment - check for bot type OR GitHub Actions bot login
-            const botComment = comments.data.find(comment => {
-              const isBot = comment.user.type === 'Bot' ||
-                           comment.user.login === 'github-actions[bot]' ||
-                           comment.user.login.includes('[bot]');
+            const botComment = allComments.find(comment => {
+              const isBot = comment.user?.type === 'Bot' ||
+                           comment.user?.login === 'github-actions[bot]' ||
+                           (comment.user?.login && comment.user.login.includes('[bot]'));
               const hasTodoHeader = comment.body && comment.body.includes('📋 New or Modified TODOs in This PR');
+              if (isBot && hasTodoHeader) {
+                console.log(`Found matching bot comment: ID ${comment.id}, User: ${comment.user?.login}, Source: ${comment._source}`);
+              }
               return isBot && hasTodoHeader;
             });
 
             if (botComment) {
-              console.log(`Found existing bot comment (ID: ${botComment.id})`);
+              console.log(`Found existing bot comment (ID: ${botComment.id}, Source: ${botComment._source})`);
             } else {
-              console.log('No existing bot comment found');
+              console.log('No existing bot comment found matching criteria');
             }
 
             // Check if todos is empty (no TODOs found)
             if (!todos || todos.length === 0) {
               // No TODOs found - delete existing comment if it exists
               if (botComment) {
-                console.log('No TODOs found, deleting existing comment...');
+                console.log(`No TODOs found, deleting existing comment (ID: ${botComment.id}, Source: ${botComment._source})...`);
                 try {
-                  await github.rest.issues.deleteComment({
-                    comment_id: botComment.id,
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                  });
-                  console.log('Comment deleted successfully');
+                  // Use the source type we tracked
+                  if (botComment._source === 'review') {
+                    await github.rest.pulls.deleteReviewComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      comment_id: botComment.id,
+                    });
+                    console.log('Review comment deleted successfully');
+                  } else {
+                    await github.rest.issues.deleteComment({
+                      comment_id: botComment.id,
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                    });
+                    console.log('Issue comment deleted successfully');
+                  }
                 } catch (error) {
                   console.error('Error deleting comment:', error.message);
+                  console.error('Error details:', JSON.stringify(error, null, 2));
                   throw error;
                 }
               } else {

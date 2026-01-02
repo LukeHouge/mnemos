@@ -29,10 +29,10 @@ def test_full_health_check_without_openai_key(client):
 
     try:
         response = client.get("/api/v1/health/full")
-    assert response.status_code == 200
-    data = response.json()
-    assert "services" in data
-    assert "openai" in data["services"]
+        assert response.status_code == 200
+        data = response.json()
+        assert "services" in data
+        assert "openai" in data["services"]
         assert data["services"]["openai"]["status"] == ServiceHealthStatusEnum.NOT_CONFIGURED.value
     finally:
         # Clean up
