@@ -3,17 +3,25 @@
 
 repos:
   # Ruff - Fast Python linter and formatter
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4
+  # Use local hook to ensure same Ruff version as dev container
+  - repo: local
     hooks:
-      # Run the linter (check only, no auto-fix to avoid conflicts with unstaged changes)
-      # Use `just lint-fix` or `just format` manually to fix issues
       - id: ruff
-        args: []  # Check only, don't auto-fix
+        name: ruff (lint)
+        entry: bash -c 'cd backend && uv run --extra dev ruff check app/'
+        language: system
+        types: [python]
         files: ^backend/app/
-      # Run the formatter
+        pass_filenames: false
+        always_run: false
       - id: ruff-format
+        name: ruff (format check)
+        entry: bash -c 'cd backend && uv run --extra dev ruff format --check app/'
+        language: system
+        types: [python]
         files: ^backend/app/
+        pass_filenames: false
+        always_run: false
 
   # Pyright - Local hook using project environment
   # Note: Pyright is a read-only type checker and doesn't modify source files.

@@ -33,10 +33,29 @@ jobs:
 
           # Find TODOs only in added/modified lines (not pre-existing)
           # Use git diff to find lines that were added or changed
+          # Format: file:line:content (strip leading whitespace for readability)
           TODOS=$(git diff "$BASE_BRANCH...HEAD" --unified=0 | \
-            grep -E '^\+.*(TODO|FIXME|XXX|HACK|NOTE):' | \
-            grep -v '^+++' | \
-            sed 's/^+//' || true)
+            awk '
+              BEGIN { file = ""; line = 0 }
+              /^diff --git/ { file = ""; next }
+              /^\+{3} / {
+                file = $2;
+                gsub(/^a\//, "", file);
+                next
+              }
+              /^@@/ {
+                match($0, /\+[0-9]+/);
+                if (RSTART > 0) line = substr($0, RSTART+1, RLENGTH-1);
+                next
+              }
+              /^\+.*(TODO|FIXME|XXX|HACK|NOTE):/ {
+                content = $0;
+                gsub(/^\+[[:space:]]*/, "", content);
+                gsub(/^[[:space:]]+/, "", content);
+                if (file && line) print file ":" line ":" content;
+                line++
+              }
+            ' || true)
 
           if [ -z "$TODOS" ]; then
             echo "✅ No new or modified TODOs found in PR!"
@@ -70,8 +89,15 @@ jobs:
             const baseBranch = process.env.GITHUB_BASE_REF || 'main';
 
             // Find TODOs only in added/modified lines using git diff
+            // Format: file:line:content (strip leading whitespace for readability)
             const todos = execSync(
-              `git diff ${baseBranch}...HEAD --unified=0 | grep -E '^\\+.*(TODO|FIXME|XXX|HACK|NOTE):' | grep -v '^+++' | sed 's/^+//'`,
+              `git diff ${baseBranch}...HEAD --unified=0 | awk '
+                BEGIN { file = ""; line = 0 }
+                /^diff --git/ { file = ""; next }
+                /^\\+\\+\\+ / { file = $2; gsub(/^a\\//, "", file); next }
+                /^@@/ { match($0, /\\+[0-9]+/); if (RSTART > 0) line = substr($0, RSTART+1, RLENGTH-1); next }
+                /^\\+.*(TODO|FIXME|XXX|HACK|NOTE):/ { content = $0; gsub(/^\\+[[:space:]]*/, "", content); gsub(/^[[:space:]]+/, "", content); if (file && line) print file ":" line ":" content; line++ }
+              '`,
               { encoding: 'utf-8' }
             ).trim();
 

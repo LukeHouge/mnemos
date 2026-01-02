@@ -84,6 +84,8 @@ ignore = [
     "B008", # Do not perform function call in argument defaults (FastAPI Depends pattern is safe)
     "TRY301", # Abstract raise to inner function (not needed for simple error handling)
     "PLW0603", # Using global statement (needed for singleton pattern)
+    # Note: PT028 is not in ignore list because pre-commit Ruff version doesn't recognize it
+    # Use # noqa: PT028 on specific lines in dev container (pre-commit will ignore unknown noqa)
 ]
 
 [tool.ruff.format]
@@ -102,7 +104,7 @@ known-first-party = ["app"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Allow unused imports in __init__.py
-"app/routes/*.py" = ["B008"]  # FastAPI Depends() in defaults is the standard pattern
+"app/routes/*.py" = ["B008", "PT028"]  # FastAPI Depends() in defaults is the standard pattern, PT028 is false positive for route handlers
 
 [tool.pyright]
 include = ["app"]
