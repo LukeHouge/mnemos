@@ -1,0 +1,96 @@
+name: Check TODOs
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [main, master, develop]
+
+jobs:
+  check-todos:
+    name: Check for TODOs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find TODOs
+        id: find-todos
+        run: |
+          echo "📋 Checking for TODOs, FIXMEs, and XXX comments..."
+          echo ""
+
+          # Find all TODOs (excluding common ignore patterns and config directories)
+          TODOS=$(grep -rn --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' \
+            -E '(TODO|FIXME|XXX|HACK|NOTE):' . 2>/dev/null | \
+            grep -v '.venv' | \
+            grep -v '__pycache__' | \
+            grep -v '.git' | \
+            grep -v 'node_modules' | \
+            grep -v '.pytest_cache' | \
+            grep -v '.ruff_cache' | \
+            grep -v '.mypy_cache' | \
+            grep -v 'uv.lock' | \
+            grep -v 'package-lock.json' | \
+            grep -v 'yarn.lock' | \
+            grep -v '^\./\.vscode' | \
+            grep -v '^\./\.github/workflows' | \
+            sort || true)
+
+          if [ -z "$TODOS" ]; then
+            echo "✅ No TODOs found!"
+            echo "has_todos=false" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  Found TODOs/FIXMEs/XXX comments:"
+            echo ""
+            echo "$TODOS"
+            echo ""
+            echo "has_todos=true" >> $GITHUB_OUTPUT
+
+            # Count by type
+            TODO_COUNT=$(echo "$TODOS" | grep -c "TODO:" || echo "0")
+            FIXME_COUNT=$(echo "$TODOS" | grep -c "FIXME:" || echo "0")
+            XXX_COUNT=$(echo "$TODOS" | grep -c "XXX:" || echo "0")
+
+            echo "📊 Summary:"
+            echo "  TODO: $TODO_COUNT"
+            echo "  FIXME: $FIXME_COUNT"
+            echo "  XXX: $XXX_COUNT"
+          fi
+
+      - name: Comment on PR (if TODOs found)
+        if: github.event_name == 'pull_request' && steps.find-todos.outputs.has_todos == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { execSync } = require('child_process');
+
+            // Get list of TODOs
+            const todos = execSync(`
+              grep -rn --include='*.py' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.toml' --include='*.json' \
+                -E '(TODO|FIXME|XXX|HACK|NOTE):' . 2>/dev/null | \
+              grep -v '.venv' | grep -v '__pycache__' | grep -v '.git' | \
+              grep -v 'node_modules' | grep -v '.pytest_cache' | grep -v '.ruff_cache' | \
+              grep -v '.mypy_cache' | grep -v 'uv.lock' | grep -v 'package-lock.json' | grep -v 'yarn.lock' | \
+              grep -v '^\./\.vscode' | grep -v '^\./\.github/workflows' | sort
+            `, { encoding: 'utf-8' });
+
+            const body = `## 📋 TODOs Found in This PR
+
+            The following TODO/FIXME/XXX comments were found:
+
+            \`\`\`
+            ${todos}
+            \`\`\`
+
+            **Note:** This is informational. Please ensure TODOs are tracked in issues or removed before merging.
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
