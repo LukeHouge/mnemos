@@ -10,7 +10,7 @@ from app.models.health import (
     ServiceHealthStatusEnum,
 )
 from app.services.openai_service import OpenAIService, get_openai_service
-# TODO: test
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["Health"])
 
