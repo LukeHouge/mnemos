@@ -1,6 +1,6 @@
 # Mnemos
 
-[![CI](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/LukeHouge/mnemos/actions/workflows/ci.yml/badge.svg)](https://github.com/LukeHouge/mnemos/actions/workflows/ci.yml)
 
 **Second Brain for Receipts / Manuals / PDFs** - A personal RAG system for managing documents with intelligent search and chat.
 
