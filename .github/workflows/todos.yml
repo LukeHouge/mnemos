@@ -91,16 +91,22 @@ jobs:
 
             // Find TODOs only in added/modified lines using git diff
             // Format: file:line:content (strip leading whitespace for readability)
-            const todos = execSync(
-              `git diff ${baseBranch}...HEAD --unified=0 | awk '
-                BEGIN { file = ""; line = 0 }
-                /^diff --git/ { file = ""; next }
-                /^\\+\\+\\+ / { file = $2; gsub(/^a\\//, "", file); gsub(/^b\\//, "", file); next }
-                /^@@/ { match($0, /\\+[0-9]+/); if (RSTART > 0) line = substr($0, RSTART+1, RLENGTH-1); next }
-                /^\\+.*(TODO|FIXME|XXX|HACK|NOTE):/ { content = $0; gsub(/^\\+[[:space:]]*/, "", content); gsub(/^[[:space:]]+/, "", content); if (file && line) print file ":" line ":" content; line++ }
-              '`,
-              { encoding: 'utf-8' }
-            ).trim();
+            let todos = '';
+            try {
+              todos = execSync(
+                `git diff ${baseBranch}...HEAD --unified=0 | awk '
+                  BEGIN { file = ""; line = 0 }
+                  /^diff --git/ { file = ""; next }
+                  /^\\+\\+\\+ / { file = $2; gsub(/^a\\//, "", file); gsub(/^b\\//, "", file); next }
+                  /^@@/ { match($0, /\\+[0-9]+/); if (RSTART > 0) line = substr($0, RSTART+1, RLENGTH-1); next }
+                  /^\\+.*(TODO|FIXME|XXX|HACK|NOTE):/ { content = $0; gsub(/^\\+[[:space:]]*/, "", content); gsub(/^[[:space:]]+/, "", content); if (file && line) print file ":" line ":" content; line++ }
+                '`,
+                { encoding: 'utf-8' }
+              ).trim();
+            } catch (error) {
+              console.log('Error finding TODOs:', error.message);
+              todos = '';
+            }
 
             // Find existing comment from this bot
             const comments = await github.rest.issues.listComments({
@@ -109,19 +115,41 @@ jobs:
               repo: context.repo.repo,
             });
 
-            const botComment = comments.data.find(comment =>
-              comment.user.type === 'Bot' &&
-              comment.body.includes('📋 New or Modified TODOs in This PR')
-            );
+            console.log(`Found ${comments.data.length} total comments on this PR`);
 
-            if (!todos) {
+            // Find bot comment - check for bot type OR GitHub Actions bot login
+            const botComment = comments.data.find(comment => {
+              const isBot = comment.user.type === 'Bot' ||
+                           comment.user.login === 'github-actions[bot]' ||
+                           comment.user.login.includes('[bot]');
+              const hasTodoHeader = comment.body && comment.body.includes('📋 New or Modified TODOs in This PR');
+              return isBot && hasTodoHeader;
+            });
+
+            if (botComment) {
+              console.log(`Found existing bot comment (ID: ${botComment.id})`);
+            } else {
+              console.log('No existing bot comment found');
+            }
+
+            // Check if todos is empty (no TODOs found)
+            if (!todos || todos.length === 0) {
               // No TODOs found - delete existing comment if it exists
               if (botComment) {
-                await github.rest.issues.deleteComment({
-                  comment_id: botComment.id,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                });
+                console.log('No TODOs found, deleting existing comment...');
+                try {
+                  await github.rest.issues.deleteComment({
+                    comment_id: botComment.id,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                  });
+                  console.log('Comment deleted successfully');
+                } catch (error) {
+                  console.error('Error deleting comment:', error.message);
+                  throw error;
+                }
+              } else {
+                console.log('No TODOs found and no existing comment to delete');
               }
               return;
             }
