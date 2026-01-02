@@ -53,6 +53,7 @@ class OpenAIService:
             logger.error("Attempted to use OpenAI service without API key")
             raise ValueError(error_msg)
 
+        # TODO: testing 2
         try:
             response = await self._client.chat.completions.create(  # type: ignore[union-attr]
                 model=model,
