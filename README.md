@@ -1,7 +1,6 @@
 # Mnemos
 
 [![CI](https://github.com/LukeHouge/mnemos/actions/workflows/ci.yml/badge.svg)](https://github.com/LukeHouge/mnemos/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-see%20CI-blue)](https://github.com/LukeHouge/mnemos/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 
