@@ -53,10 +53,10 @@ def test_chat_without_api_key(client):
     app.dependency_overrides[get_openai_service] = lambda: mock_service
 
     try:
-        response = client.post(
+    response = client.post(
             "/api/v1/ai/chat",
-            json={"message": "Hello"},
-        )
+        json={"message": "Hello"},
+    )
 
         assert response.status_code == 503
         assert "not available" in response.json()["detail"].lower()

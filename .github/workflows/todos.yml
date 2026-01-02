@@ -41,6 +41,7 @@ jobs:
               /^\+{3} / {
                 file = $2;
                 gsub(/^a\//, "", file);
+                gsub(/^b\//, "", file);
                 next
               }
               /^@@/ {
@@ -78,8 +79,8 @@ jobs:
             echo "  XXX: $XXX_COUNT"
           fi
 
-      - name: Comment on PR (if TODOs found)
-        if: github.event_name == 'pull_request' && steps.find-todos.outputs.has_todos == 'true'
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
@@ -94,23 +95,12 @@ jobs:
               `git diff ${baseBranch}...HEAD --unified=0 | awk '
                 BEGIN { file = ""; line = 0 }
                 /^diff --git/ { file = ""; next }
-                /^\\+\\+\\+ / { file = $2; gsub(/^a\\//, "", file); next }
+                /^\\+\\+\\+ / { file = $2; gsub(/^a\\//, "", file); gsub(/^b\\//, "", file); next }
                 /^@@/ { match($0, /\\+[0-9]+/); if (RSTART > 0) line = substr($0, RSTART+1, RLENGTH-1); next }
                 /^\\+.*(TODO|FIXME|XXX|HACK|NOTE):/ { content = $0; gsub(/^\\+[[:space:]]*/, "", content); gsub(/^[[:space:]]+/, "", content); if (file && line) print file ":" line ":" content; line++ }
               '`,
               { encoding: 'utf-8' }
             ).trim();
-
-            if (!todos) {
-              return;
-            }
-
-            const body = '## 📋 New or Modified TODOs in This PR\n\n' +
-              'The following TODO/FIXME/XXX comments were **added or modified** in this PR (pre-existing TODOs are ignored):\n\n' +
-              '```\n' +
-              todos +
-              '\n```\n\n' +
-              '**Note:** This is informational. Please ensure TODOs are tracked in issues or removed before merging.';
 
             // Find existing comment from this bot
             const comments = await github.rest.issues.listComments({
@@ -123,6 +113,25 @@ jobs:
               comment.user.type === 'Bot' &&
               comment.body.includes('📋 New or Modified TODOs in This PR')
             );
+
+            if (!todos) {
+              // No TODOs found - delete existing comment if it exists
+              if (botComment) {
+                await github.rest.issues.deleteComment({
+                  comment_id: botComment.id,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                });
+              }
+              return;
+            }
+
+            const body = '## 📋 New or Modified TODOs in This PR\n\n' +
+              'The following TODO/FIXME/XXX comments were **added or modified** in this PR (pre-existing TODOs are ignored):\n\n' +
+              '```\n' +
+              todos +
+              '\n```\n\n' +
+              '**Note:** This is informational. Please ensure TODOs are tracked in issues or removed before merging.';
 
             if (botComment) {
               // Update existing comment
