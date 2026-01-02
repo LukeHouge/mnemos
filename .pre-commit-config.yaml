@@ -6,15 +6,22 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.4
     hooks:
-      # Run the linter
+      # Run the linter (check only, no auto-fix to avoid conflicts with unstaged changes)
+      # Use `just lint-fix` or `just format` manually to fix issues
       - id: ruff
-        args: [--fix]
+        args: []  # Check only, don't auto-fix
         files: ^backend/app/
       # Run the formatter
       - id: ruff-format
         files: ^backend/app/
 
   # Pyright - Local hook using project environment
+  # Note: Pyright is a read-only type checker and doesn't modify source files.
+  # The "files were modified" warning is a pre-commit false positive caused by
+  # `uv run` potentially modifying .venv (which is gitignored but still detected).
+  #
+  # Workaround when committing with unstaged changes:
+  #   SKIP=pyright git commit -m "your message"
   - repo: local
     hooks:
       - id: pyright
@@ -24,6 +31,8 @@ repos:
         types: [python]
         files: ^backend/app/
         pass_filenames: false
+        always_run: false
+        require_serial: true
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks

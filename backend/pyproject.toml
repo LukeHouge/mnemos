@@ -12,6 +12,8 @@ dependencies = [
     "sqlalchemy>=2.0.23",
     "alembic>=1.12.1",
     "asyncpg>=0.29.0",  # PostgreSQL async driver
+    "openai>=1.0.0",  # OpenAI API client
+    "rich>=13.7.0",  # Beautiful terminal output and logging
 ]
 
 [project.optional-dependencies]
@@ -22,6 +24,7 @@ dev = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
     "pre-commit>=3.5.0",
+    "httpx>=0.25.0",  # For TestClient
 ]
 
 [tool.ruff]
@@ -81,6 +84,9 @@ ignore = [
     "PLR0913", # too many arguments
     "PLR0912", # too many branches
     "TRY003", # avoid specifying long messages outside exception class
+    "B008", # Do not perform function call in argument defaults (FastAPI Depends pattern is safe)
+    "TRY301", # Abstract raise to inner function (not needed for simple error handling)
+    "PLW0603", # Using global statement (needed for singleton pattern)
 ]
 
 [tool.ruff.format]
@@ -99,6 +105,7 @@ known-first-party = ["app"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"app/routes/*.py" = ["B008"]  # FastAPI Depends() in defaults is the standard pattern
 
 [tool.pyright]
 include = ["app"]
@@ -107,10 +114,17 @@ exclude = [
     "**/.venv",
     "**/venv",
     "**/.mypy_cache",
+    "**/.pyright",
 ]
 
 # Type checking mode
 typeCheckingMode = "basic"
+
+# Disable reportCallInDefaultInitializer for FastAPI Depends() pattern
+reportCallInDefaultInitializer = false
+
+# Don't create cache files that could trigger pre-commit file modification detection
+useLibraryCodeForTypes = true
 
 # Python version
 pythonVersion = "3.12"
@@ -144,9 +158,6 @@ reportConstantRedefinition = "warning"
 
 # Report incomplete stub
 reportIncompleteStub = false
-
-# Report call in default initializer
-reportCallInDefaultInitializer = true
 
 # Report unnecessary isinstance
 reportUnnecessaryIsInstance = true

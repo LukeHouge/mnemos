@@ -18,6 +18,8 @@ htmlcov/
 
 # Type checking
 .mypy_cache/
+.pyright/
+pyrightconfig.json
 
 # Ruff
 .ruff_cache/

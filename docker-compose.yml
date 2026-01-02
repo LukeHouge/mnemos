@@ -16,6 +16,8 @@ services:
       timeout: 5s
       retries: 5
 
+  # Production backend container - only start when testing production behavior
+  # For development, use the dev container with: just run-dev
   backend:
     build:
       context: ./backend
@@ -35,6 +37,8 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/mnemos
+    profiles:
+      - production  # Only start with: docker compose --profile production up backend
 
   dev:
     build:
@@ -45,6 +49,8 @@ services:
       - .:/workspace
       - /workspace/backend/.venv  # Exclude venv from mount
     working_dir: /workspace
+    ports:
+      - "8000:8000"  # Expose port for dev server
     # Environment files loaded in order - later files override earlier ones
     env_file:
       - ./backend/.env.dev
