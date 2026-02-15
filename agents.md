@@ -1,6 +1,27 @@
 # Mnemos - Agent Context
 
-Quick-reference for AI agents (Cursor, Copilot, etc.) working in this repository.
+Quick-reference for AI agents (Cursor, Copilot, Claude Code, etc.) working in this repository.
+
+## Mandatory Pre-Commit Validation
+
+**CRITICAL: You MUST run these checks before EVERY commit and before opening ANY PR. No exceptions. Never commit or open a PR with failing checks.**
+
+```bash
+just check        # Lint (Ruff) + format check (Ruff) + type check (Pyright)
+just test         # Run all unit tests
+```
+
+If either command fails, fix ALL errors before committing. Do NOT skip this step. Do NOT commit with type errors, lint errors, or test failures. CI will reject the PR if these checks fail.
+
+**Without Docker / without `just`:**
+
+```bash
+cd backend
+uv run ruff check app/              # Lint
+uv run ruff format --check app/     # Format check
+uv run pyright app/                 # Type check
+uv run pytest tests/unit/ -v        # Unit tests
+```
 
 ## What Is Mnemos?
 
@@ -201,16 +222,14 @@ just todos        # Find all TODOs
 
 ### Validating Your Changes
 
-Before committing, run these checks to ensure nothing is broken.
-
-**Minimum validation (must pass before every commit):**
+**MANDATORY: Run these checks before EVERY commit and EVERY PR. No exceptions. Do NOT commit or open a PR with any failures.**
 
 ```bash
 just check        # Lint (Ruff) + format check (Ruff) + type check (Pyright)
 just test         # Run all unit tests
 ```
 
-These two commands mirror exactly what CI runs on every push/PR. If they pass locally, CI will pass.
+These two commands mirror exactly what CI runs on every push/PR. If they pass locally, CI will pass. If they fail, fix ALL errors before proceeding.
 
 **Step-by-step validation:**
 
