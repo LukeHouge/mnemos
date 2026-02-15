@@ -176,6 +176,44 @@ migrate-create message:
 db-status:
     docker compose exec postgres psql -U postgres -d mnemos -c "\dt"
 
+# Run structural architecture linter (enforces layer boundaries)
+lint-structure:
+    #!/usr/bin/env bash
+    set -e
+    cd backend
+    python scripts/lint_structure.py
+
+# Full harness verification: lint + typecheck + structural lint + tests
+# This is the single command AI agents and humans should run before committing.
+harness:
+    #!/usr/bin/env bash
+    set -e
+    echo "=== Harness verification ==="
+    cd backend
+
+    echo ""
+    echo "--- Ruff lint ---"
+    uv run --extra dev ruff check app/
+
+    echo ""
+    echo "--- Ruff format check ---"
+    uv run --extra dev ruff format --check app/
+
+    echo ""
+    echo "--- Pyright type check ---"
+    uv run --extra dev pyright app/
+
+    echo ""
+    echo "--- Structural architecture lint ---"
+    python scripts/lint_structure.py
+
+    echo ""
+    echo "--- Unit tests ---"
+    uv run pytest tests/unit/ -v
+
+    echo ""
+    echo "=== Harness: ALL PASSED ==="
+
 # Check code quality (lint + format check + type check) -- via Docker
 check:
     docker compose exec dev sh -c "cd backend && uv run --extra dev ruff check app/ && uv run --extra dev ruff format --check app/ && uv run --extra dev pyright app/"

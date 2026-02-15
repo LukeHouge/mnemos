@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd backend && python scripts/lint_structure.py 2>&1; echo '---'; uv run --extra dev ruff check app/ 2>&1 | tail -5; echo '---'; uv run pytest tests/unit/ --tb=no -q 2>&1 | tail -5"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(just harness)",
+      "Bash(just test)",
+      "Bash(just test-*)",
+      "Bash(just check)",
+      "Bash(just format)",
+      "Bash(just lint*)",
+      "Bash(just typecheck)",
+      "Bash(just lint-structure)",
+      "Bash(cd backend && *)"
+    ]
+  }
+}

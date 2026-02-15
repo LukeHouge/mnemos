@@ -1,4 +1,4 @@
-# Mnemos - Cursor Rules
+# Mnemos
 
 Personal RAG system for managing documents (receipts, manuals, PDFs) with intelligent search and chat. Python 3.12 / FastAPI / PostgreSQL backend.
 
@@ -21,16 +21,21 @@ All project knowledge lives in `docs/`. Read these before making changes:
 - `docs/commands.md` - All available `just` commands
 - `docs/workflows.md` - Step-by-step workflows for common tasks
 
-## Architecture Rules (Enforced by Structural Linter)
+## Architecture Rules (Enforced)
 
-Dependencies flow downward only: Routes -> Services -> Models.
+Dependencies flow downward only. Violations fail `just lint-structure`.
 
-- **Routes** (`app/routes/`): Thin HTTP handlers. Delegate to services.
-- **Services** (`app/services/`): Business logic, external calls. May import models.
-- **Models** (`app/models/`): Pydantic schemas only. No imports from routes or services.
-- **Middleware** (`app/middleware/`): Request/response processing. No route/service imports.
+```
+Routes (app/routes/)  -->  Services (app/services/)  -->  External APIs / DB
+   |                          |
+   v                          v
+Models (app/models/)     Models (app/models/)
+```
 
-Violations are caught by `just lint-structure` and will fail `just harness`.
+- **Routes**: Thin HTTP handlers. Delegate to services.
+- **Services**: Business logic, external calls.
+- **Models**: Pydantic schemas only. No imports from routes or services.
+- **Middleware**: Request/response processing. No route/service imports.
 
 ## Key Constraints
 
@@ -38,12 +43,8 @@ Violations are caught by `just lint-structure` and will fail `just harness`.
 2. Type hints on all function parameters and return values
 3. Modern syntax: `list[str]`, `str | None` (not `List`, `Optional`)
 4. Mock at service layer in tests, not at route layer
-5. One concept per test, descriptive names: `test_chat_returns_error_when_service_unavailable`
+5. One concept per test, descriptive names
 6. No secrets in code, no file paths in error responses
-7. Log errors with context via `extra={}`, return generic messages to clients
-8. Arrange-Act-Assert pattern in tests
-9. `@pytest.mark.integration` for integration tests
-10. No commented-out code (use git history)
 
 ## Verification Workflow
 
@@ -57,7 +58,7 @@ just harness          # Full verification (lint + types + tests + structure)
 
 ```
 backend/
-├── app/
+├── app/                     # Application code
 │   ├── main.py              # FastAPI entry point
 │   ├── config.py            # Pydantic BaseSettings
 │   ├── models/              # Pydantic schemas only
@@ -65,28 +66,10 @@ backend/
 │   ├── services/            # Business logic
 │   └── middleware/           # Request/response processing
 ├── tests/
-│   ├── conftest.py          # Shared fixtures
 │   ├── unit/                # Fast, mocked tests (CI)
 │   └── integration/         # Real API tests (optional)
 ├── scripts/
 │   └── lint_structure.py    # Structural architecture linter
 └── pyproject.toml           # Dependencies + tool config
+docs/                        # Project knowledge base (system of record)
 ```
-
-## Tools
-
-- **Ruff** - Linting and formatting (`backend/pyproject.toml`)
-- **Pyright** - Type checking (`backend/pyproject.toml`)
-- **pytest** - Testing (`backend/pytest.ini`)
-- **uv** - Package management
-- **just** - Command runner (`Justfile`)
-
-## Cloud / Remote Agent Environment
-
-Environment setup is automated via `scripts/setup-agent-env.sh`:
-- **Cursor Cloud Agents**: `.cursor/setup.sh` calls it automatically on VM start
-- **Claude Code**: `.claude/settings.json` SessionStart hook calls it automatically
-
-The script installs `uv`, `just`, and syncs all Python dependencies.
-Use `-local` command variants (e.g., `just harness-local`) in agent environments where Docker is not available.
-See `docs/commands.md` for the full list.
