@@ -176,9 +176,22 @@ migrate-create message:
 db-status:
     docker compose exec postgres psql -U postgres -d mnemos -c "\dt"
 
-# Check code quality (lint + format check + type check)
+# Check code quality (lint + format check + type check) -- via Docker
 check:
     docker compose exec dev sh -c "cd backend && uv run --extra dev ruff check app/ && uv run --extra dev ruff format --check app/ && uv run --extra dev pyright app/"
+
+# Check code quality locally (no Docker required -- for CI agents and local dev)
+check-local:
+    #!/usr/bin/env bash
+    set -e
+    cd backend
+    echo "Running Ruff linter..."
+    uv run --extra dev ruff check app/
+    echo "Running Ruff format check..."
+    uv run --extra dev ruff format --check app/
+    echo "Running Pyright type checker..."
+    uv run --extra dev pyright app/
+    echo "All checks passed!"
 
 # Format code (formatting + import sorting)
 format:

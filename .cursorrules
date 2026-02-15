@@ -116,6 +116,32 @@ async def endpoint(
 
 ## Git & CI
 
+### Pre-Commit / Pre-PR Quality Gate (MANDATORY)
+
+**Before EVERY commit and before opening ANY pull request, you MUST run:**
+
+```bash
+cd backend && uv run --extra dev ruff check app/ && uv run --extra dev ruff format --check app/ && uv run --extra dev pyright app/
+```
+
+Or equivalently:
+
+```bash
+just check-local   # Without Docker (for CI agents and local dev)
+just check         # With Docker dev container
+```
+
+**This is non-negotiable.** No PR should ever be opened with type checking, linting, or formatting failures. If any of these checks fail, fix the issues before committing.
+
+Specifically:
+- **Pyright type checking** must pass with zero errors
+- **Ruff linting** must pass with zero errors
+- **Ruff format check** must pass (code must be properly formatted)
+
+If you introduce new code that causes type errors, fix the type errors before committing. Do not use `type: ignore` comments unless absolutely necessary and justified with a comment explaining why.
+
+Pre-commit hooks are configured (`.pre-commit-config.yaml`) and will run these checks automatically on `git commit`, but you should also run them manually before pushing or opening a PR to catch issues early.
+
 ### Commits
 - **Descriptive commit messages** - What and why
 - **Small, focused commits** - One logical change per commit
@@ -125,6 +151,7 @@ async def endpoint(
 - **No hardcoded secrets** in CI configuration
 - **Use environment variables** for sensitive data
 - **Fast unit tests in CI** - Save integration tests for optional runs
+- **CI status checks (lint, type check, tests) are required to pass before PR merge**
 
 ## Project-Specific
 
@@ -154,8 +181,11 @@ async def endpoint(
 ## Commands
 
 ```bash
-just check        # Lint and type check
+just check        # Lint + format check + type check (via Docker)
+just check-local  # Lint + format check + type check (no Docker, for agents)
 just format       # Format code
 just test         # Run unit tests
 just test-all     # Run all tests (including integration)
+just typecheck    # Run only Pyright type checking
+just lint         # Run only Ruff linting
 ```
