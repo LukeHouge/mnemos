@@ -116,15 +116,38 @@ async def endpoint(
 
 ## Git & CI
 
+### Mandatory Pre-Commit Validation
+
+**CRITICAL: You MUST run these checks before EVERY commit and before opening ANY PR. No exceptions. Never commit or open a PR with failing checks.**
+
+```bash
+just check        # Lint (Ruff) + format check (Ruff) + type check (Pyright)
+just test         # Run all unit tests
+```
+
+If either command fails, fix ALL errors before committing. Type errors must be fixed manually (update type annotations, add missing types, fix incompatible types). Lint and format issues can often be auto-fixed with `just format` and `just lint-fix`.
+
+**Without Docker / without `just`:**
+
+```bash
+cd backend
+uv run ruff check app/              # Lint
+uv run ruff format --check app/     # Format check
+uv run pyright app/                 # Type check
+uv run pytest tests/unit/ -v        # Unit tests
+```
+
 ### Commits
 - **Descriptive commit messages** - What and why
 - **Small, focused commits** - One logical change per commit
 - **Never commit secrets** - Check before committing
+- **Always validate before committing** - `just check && just test` must pass
 
 ### CI/CD
 - **No hardcoded secrets** in CI configuration
 - **Use environment variables** for sensitive data
 - **Fast unit tests in CI** - Save integration tests for optional runs
+- **CI gates PR merge** - Lint, type check, and tests must pass before merging
 
 ## Project-Specific
 
