@@ -99,10 +99,14 @@ mnemos/
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/` | API root (version, links) |
+| GET | `/docs` | **Swagger UI** - Interactive API documentation |
+| GET | `/redoc` | **ReDoc** - Alternative API documentation |
 | GET | `/api/v1/health` | Basic health (load balancer) |
 | GET | `/api/v1/health/full` | Detailed health (all services) |
 | POST | `/api/v1/ai/chat` | Chat with AI assistant |
 | GET | `/api/v1/ai/test` | Test OpenAI connectivity |
+
+FastAPI auto-generates OpenAPI (Swagger) docs from route definitions, Pydantic models, and docstrings. Visit http://localhost:8000/docs when the server is running to explore and test endpoints interactively.
 
 ## Roadmap & Planned Work
 
@@ -194,6 +198,56 @@ just todos        # Find all TODOs
 - **One concept per test** - Descriptive names like `test_chat_returns_error_when_service_unavailable`
 - **Arrange-Act-Assert** pattern
 - **Integration tests** use `@pytest.mark.integration` and `@pytest.mark.skipif` for credentials
+
+### Validating Your Changes
+
+Before committing, run these checks to ensure nothing is broken. All commands run inside the Docker dev container.
+
+**Full validation (recommended before every commit):**
+
+```bash
+just check        # Lint (Ruff) + format check (Ruff) + type check (Pyright)
+just test         # Run all unit tests
+```
+
+**Step-by-step validation:**
+
+```bash
+# 1. Lint - catches style issues, unused imports, common bugs
+just lint         # Check only
+just lint-fix     # Auto-fix what it can
+
+# 2. Format - ensures consistent code style
+just format       # Auto-format code and sort imports
+
+# 3. Type check - catches type errors
+just typecheck    # Pyright in basic mode
+
+# 4. Unit tests - fast, no external services needed
+just test                          # All unit tests
+just test-file tests/unit/test_ai_routes.py  # Specific file
+just test-match "chat"             # Tests matching pattern
+
+# 5. Integration tests (optional, requires OPENAI_API_KEY)
+just test-integration
+
+# 6. Coverage report
+just test-cov     # Generates HTML report at backend/htmlcov/
+```
+
+**What CI checks on every push/PR:**
+- Ruff linting and format check
+- Pyright type checking
+- All unit tests with coverage
+
+**Pre-commit hooks (if installed):**
+
+```bash
+just install-hooks   # One-time setup
+# Now git commit will auto-run: ruff check, ruff format --check, pyright
+```
+
+If a check fails, `just format` and `just lint-fix` can auto-fix most issues. For Pyright errors, you'll need to fix type annotations manually.
 
 ### What NOT to Do
 
