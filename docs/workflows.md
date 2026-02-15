@@ -2,19 +2,22 @@
 
 ## Before Making Any Change
 
+**With Docker (local dev):**
 1. Ensure the dev environment is running: `just dev`
+2. Verify current state is clean: `just harness`
+
+**Without Docker (Cloud Agents, CI):**
+1. Ensure environment is set up: `bash scripts/setup-agent-env.sh` (automatic for Cursor/Claude Code agents)
 2. Verify current state is clean: `just harness`
 
 ## Standard Change Workflow
 
 ```
-1. just test              # Confirm tests pass before starting
+1. just harness           # Confirm everything passes before starting
 2. (make changes)         # Edit code
-3. just format            # Auto-format
-4. just test              # Run tests
-5. just check             # Lint + type check
-6. just harness           # Full verification
-7. git add + commit       # Commit with descriptive message
+3. just format-local      # Auto-format (or just format with Docker)
+4. just harness           # Full verification (lint + types + tests + structure)
+5. git add + commit       # Commit with descriptive message
 ```
 
 ## Adding a New Route
