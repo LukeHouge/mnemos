@@ -1,4 +1,4 @@
-# Mnemos - Cursor Rules
+# Mnemos
 
 Personal RAG system for managing documents (receipts, manuals, PDFs) with intelligent search and chat. Python 3.12 / FastAPI / PostgreSQL backend.
 
@@ -15,22 +15,27 @@ just format           # Auto-format code
 
 All project knowledge lives in `docs/`. Read these before making changes:
 
-- `docs/architecture.md` - Layer structure, dependency rules, file organization
-- `docs/testing.md` - Test philosophy, how to write and run tests
-- `docs/style-guide.md` - Code style, formatting, type hints, error handling
-- `docs/commands.md` - All available `just` commands
-- `docs/workflows.md` - Step-by-step workflows for common tasks
+- **[docs/architecture.md](docs/architecture.md)** - Layer structure, dependency rules, file organization
+- **[docs/testing.md](docs/testing.md)** - Test philosophy, how to write and run tests
+- **[docs/style-guide.md](docs/style-guide.md)** - Code style, formatting, type hints, error handling
+- **[docs/commands.md](docs/commands.md)** - All available `just` commands
+- **[docs/workflows.md](docs/workflows.md)** - Step-by-step workflows for common tasks
 
-## Architecture Rules (Enforced by Structural Linter)
+## Architecture Rules (Enforced)
 
-Dependencies flow downward only: Routes -> Services -> Models.
+Dependencies flow downward only. Violations fail the structural linter.
 
-- **Routes** (`app/routes/`): Thin HTTP handlers. Delegate to services.
-- **Services** (`app/services/`): Business logic, external calls. May import models.
-- **Models** (`app/models/`): Pydantic schemas only. No imports from routes or services.
-- **Middleware** (`app/middleware/`): Request/response processing. No route/service imports.
+```
+Routes (app/routes/)  -->  Services (app/services/)  -->  External APIs / DB
+   |                          |
+   v                          v
+Models (app/models/)     Models (app/models/)
+```
 
-Violations are caught by `just lint-structure` and will fail `just harness`.
+- **Routes**: Thin HTTP handlers. Delegate to services.
+- **Services**: Business logic, external calls.
+- **Models**: Pydantic schemas only. No imports from routes or services.
+- **Middleware**: Request/response processing. No route/service imports.
 
 ## Key Constraints
 
@@ -38,12 +43,9 @@ Violations are caught by `just lint-structure` and will fail `just harness`.
 2. Type hints on all function parameters and return values
 3. Modern syntax: `list[str]`, `str | None` (not `List`, `Optional`)
 4. Mock at service layer in tests, not at route layer
-5. One concept per test, descriptive names: `test_chat_returns_error_when_service_unavailable`
+5. One concept per test, descriptive names
 6. No secrets in code, no file paths in error responses
-7. Log errors with context via `extra={}`, return generic messages to clients
-8. Arrange-Act-Assert pattern in tests
-9. `@pytest.mark.integration` for integration tests
-10. No commented-out code (use git history)
+7. Log errors with context, return generic messages to clients
 
 ## Verification Workflow
 
@@ -73,10 +75,10 @@ backend/
 └── pyproject.toml           # Dependencies + tool config
 ```
 
-## Tools
+## Tool Configuration
 
-- **Ruff** - Linting and formatting (`backend/pyproject.toml`)
-- **Pyright** - Type checking (`backend/pyproject.toml`)
-- **pytest** - Testing (`backend/pytest.ini`)
-- **uv** - Package management
-- **just** - Command runner (`Justfile`)
+- **Ruff**: Lint + format rules in `backend/pyproject.toml`
+- **Pyright**: Type checking in `backend/pyproject.toml`
+- **pytest**: Test config in `backend/pytest.ini`
+- **Pre-commit**: Hooks in `.pre-commit-config.yaml`
+- **CI**: GitHub Actions in `.github/workflows/ci.yml`
