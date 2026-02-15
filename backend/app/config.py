@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     OPENAI_API_KEY: str | None = None  # Optional - for OpenAI features
     CORS_ORIGINS: str = "*"  # Comma-separated origins, or "*" for all
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@postgres:5432/mnemos"
 
     @property
     def cors_origins_list(self) -> list[str]:

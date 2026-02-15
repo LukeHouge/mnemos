@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends
 
+from app.db.base import check_db_connection
 from app.models.health import (
     DetailedHealthCheck,
     HealthCheck,
@@ -47,7 +48,13 @@ async def full_health_check(
             message="Service not configured",
         )
 
-    # TODO: Add database health check when we have DB connections
+    # Check PostgreSQL
+    db_success, db_message = await check_db_connection()
+    services["postgres"] = ServiceHealthStatus(
+        status=ServiceHealthStatusEnum.CONNECTED if db_success else ServiceHealthStatusEnum.ERROR,
+        message=db_message,
+    )
+
     # TODO: Add Qdrant health check when vector DB is added
 
     # Overall status
