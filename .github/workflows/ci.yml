@@ -1,3 +1,10 @@
+# CI Pipeline - Lint, Type Check, and Test
+#
+# These jobs are required status checks for PR merge.
+# Branch protection should be configured to require:
+#   - "Lint and Type Check" (lint-and-typecheck)
+#   - "Run Tests" (test)
+# See BRANCH_PROTECTION.md for setup instructions.
 name: CI
 
 on:
