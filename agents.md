@@ -201,14 +201,16 @@ just todos        # Find all TODOs
 
 ### Validating Your Changes
 
-Before committing, run these checks to ensure nothing is broken. All commands run inside the Docker dev container.
+Before committing, run these checks to ensure nothing is broken.
 
-**Full validation (recommended before every commit):**
+**Minimum validation (must pass before every commit):**
 
 ```bash
 just check        # Lint (Ruff) + format check (Ruff) + type check (Pyright)
 just test         # Run all unit tests
 ```
+
+These two commands mirror exactly what CI runs on every push/PR. If they pass locally, CI will pass.
 
 **Step-by-step validation:**
 
@@ -235,10 +237,21 @@ just test-integration
 just test-cov     # Generates HTML report at backend/htmlcov/
 ```
 
-**What CI checks on every push/PR:**
-- Ruff linting and format check
-- Pyright type checking
-- All unit tests with coverage
+**Without Docker (e.g., in CI or running directly on host):**
+
+```bash
+cd backend
+uv run ruff check app/              # Lint
+uv run ruff format --check app/     # Format check
+uv run pyright app/                 # Type check
+uv run pytest tests/unit/ -v        # Unit tests
+```
+
+**What CI checks on every push/PR (see `.github/workflows/ci.yml`):**
+- Ruff linting (`ruff check app/`)
+- Ruff format check (`ruff format --check app/`)
+- Pyright type checking (`pyright app/`)
+- All unit tests with coverage (`pytest tests/unit/ --cov=app`)
 
 **Pre-commit hooks (if installed):**
 
@@ -247,7 +260,10 @@ just install-hooks   # One-time setup
 # Now git commit will auto-run: ruff check, ruff format --check, pyright
 ```
 
-If a check fails, `just format` and `just lint-fix` can auto-fix most issues. For Pyright errors, you'll need to fix type annotations manually.
+**Fixing failures:**
+- `just format` and `just lint-fix` auto-fix most lint/format issues
+- Pyright errors require manual fixes to type annotations
+- Test failures: read the assertion output, check the Arrange-Act-Assert structure
 
 ### What NOT to Do
 
