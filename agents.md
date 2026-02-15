@@ -165,6 +165,7 @@ Derived from TODOs in code, README mentions, and architectural signals:
 ### Quick Commands
 
 ```bash
+# With Docker (local dev)
 just dev          # Start postgres + dev container
 just run-dev      # Run backend with hot reload
 just test         # Run unit tests
@@ -172,7 +173,16 @@ just check        # Lint + type check
 just format       # Auto-format code
 just shell        # Shell into dev container
 just todos        # Find all TODOs
+
+# Without Docker (Cloud Agents, CI)
+just check-local  # Lint + format check + type check
+just format-local # Auto-format code
+just test-local   # Run unit tests
 ```
+
+### Cloud Agent Environment
+
+The `.cursor/setup.sh` script runs automatically when a Cursor Cloud Agent VM starts, installing `uv`, `just`, and all Python dependencies. Use the `-local` command variants (e.g., `just check-local`) in Cloud Agent environments since Docker is not available.
 
 ### Adding a New Feature
 
@@ -206,11 +216,16 @@ Before committing, run these checks to ensure nothing is broken.
 **Minimum validation (must pass before every commit):**
 
 ```bash
+# With Docker:
 just check        # Lint (Ruff) + format check (Ruff) + type check (Pyright)
 just test         # Run all unit tests
+
+# Without Docker (Cloud Agents, CI):
+just check-local  # Same checks, runs directly on host
+just test-local   # Same tests, runs directly on host
 ```
 
-These two commands mirror exactly what CI runs on every push/PR. If they pass locally, CI will pass.
+These commands mirror exactly what CI runs on every push/PR. If they pass locally, CI will pass.
 
 **Step-by-step validation:**
 

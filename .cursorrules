@@ -151,11 +151,23 @@ async def endpoint(
 - **uv** - Fast package management
 - **just** - Command runner (see `Justfile`)
 
+## Cloud Agent Setup
+
+The `.cursor/setup.sh` script runs automatically when a Cursor Cloud Agent VM starts.
+It installs `uv`, `just`, and all Python dependencies so you can start working immediately.
+Use `just check-local` / `just test-local` (no Docker) instead of `just check` / `just test` in Cloud Agent environments.
+
 ## Commands
 
 ```bash
-just check        # Lint and type check
+# With Docker (local dev with docker compose)
+just check        # Lint + format check + type check
 just format       # Format code
 just test         # Run unit tests
 just test-all     # Run all tests (including integration)
+
+# Without Docker (Cloud Agents, CI, direct host)
+just check-local  # Lint + format check + type check
+just format-local # Format code
+just test-local   # Run unit tests
 ```
