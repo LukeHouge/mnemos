@@ -2,14 +2,24 @@
 
 Personal RAG system for managing documents (receipts, manuals, PDFs) with intelligent search and chat. Python 3.12 / FastAPI / PostgreSQL backend.
 
+## Environment Setup (Automated)
+
+Agent environments are bootstrapped automatically:
+- **Cursor Cloud Agents**: `.cursor/setup.sh` runs on VM start
+- **Claude Code**: `.claude/settings.json` SessionStart hook runs on session start
+
+Both call the shared `scripts/setup-agent-env.sh` which installs `uv`, `just`, and all Python dependencies. Manual re-run: `bash scripts/setup-agent-env.sh`
+
 ## Quick Reference
 
 ```bash
-just harness          # Full verification (ALWAYS run before committing)
-just test             # Unit tests only
-just check            # Lint + format + type check
-just format           # Auto-format code
+just harness          # Full verification (ALWAYS run before committing, runs locally)
+just format-local     # Auto-format code (no Docker)
+just check-local      # Lint + format + type check (no Docker)
+just test-local       # Unit tests (no Docker)
 ```
+
+In agent/CI environments without Docker, use the `-local` variants for `format`, `check`, and `test`. `just harness` already runs locally (no Docker needed).
 
 ## Documentation (System of Record)
 

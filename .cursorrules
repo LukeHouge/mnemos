@@ -80,3 +80,13 @@ backend/
 - **pytest** - Testing (`backend/pytest.ini`)
 - **uv** - Package management
 - **just** - Command runner (`Justfile`)
+
+## Cloud / Remote Agent Environment
+
+Environment setup is automated via `scripts/setup-agent-env.sh`:
+- **Cursor Cloud Agents**: `.cursor/setup.sh` calls it automatically on VM start
+- **Claude Code**: `.claude/settings.json` SessionStart hook calls it automatically
+
+The script installs `uv`, `just`, and syncs all Python dependencies.
+Use `-local` command variants (e.g., `just harness-local`) in agent environments where Docker is not available.
+See `docs/commands.md` for the full list.

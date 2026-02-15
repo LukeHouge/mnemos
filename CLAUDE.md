@@ -2,14 +2,22 @@
 
 Personal RAG system for managing documents (receipts, manuals, PDFs) with intelligent search and chat. Python 3.12 / FastAPI / PostgreSQL backend.
 
+## Environment Setup
+
+Environment is bootstrapped automatically via the `SessionStart` hook in `.claude/settings.json`, which runs `scripts/setup-agent-env.sh`. This installs `uv`, `just`, and all Python dependencies. No manual setup needed.
+
+If you need to re-run setup manually: `bash scripts/setup-agent-env.sh`
+
 ## Quick Reference
 
 ```bash
 just harness          # Full verification (ALWAYS run before committing)
-just test             # Unit tests only
-just check            # Lint + format + type check
-just format           # Auto-format code
+just format-local     # Auto-format code (no Docker)
+just check-local      # Lint + format + type check (no Docker)
+just test-local       # Unit tests (no Docker)
 ```
+
+`just harness` runs directly on the host (no Docker needed) and is the single command to run before every commit. It runs: ruff lint, ruff format check, pyright type check, structural architecture lint, and all unit tests.
 
 ## Documentation (System of Record)
 
@@ -51,7 +59,7 @@ Models (app/models/)     Models (app/models/)
 
 Before every commit:
 ```bash
-just format           # Auto-format
+just format-local     # Auto-format (or just format with Docker)
 just harness          # Full verification (lint + types + tests + structure)
 ```
 
