@@ -6,11 +6,38 @@ Mnemos is a personal RAG system for managing documents (receipts, manuals, PDFs)
 
 The backend follows strict layered architecture with enforced dependency directions:
 
+```mermaid
+graph TD
+    A[Routes<br/>app/routes/] -->|delegates to| B[Services<br/>app/services/]
+    B -->|calls| C[External APIs / DB]
+    A -->|uses| D[Models<br/>app/models/]
+    B -->|uses| D
+    
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#ffe1f5
+    style D fill:#e1ffe1
 ```
-Routes (app/routes/)  -->  Services (app/services/)  -->  External APIs / DB
-   |                          |
-   v                          v
-Models (app/models/)     Models (app/models/)
+
+### Request Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Route
+    participant Service
+    participant Model
+    participant External
+    
+    Client->>Route: HTTP Request
+    Route->>Model: Validate with Pydantic
+    Route->>Service: Delegate business logic
+    Service->>Model: Use schemas
+    Service->>External: API call / DB query
+    External-->>Service: Response
+    Service-->>Route: Result
+    Route->>Model: Format response
+    Route-->>Client: HTTP Response
 ```
 
 ### Layer Rules
