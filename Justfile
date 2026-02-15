@@ -181,7 +181,7 @@ lint-structure:
     #!/usr/bin/env bash
     set -e
     cd backend
-    python scripts/lint_structure.py
+    uv run python scripts/lint_structure.py
 
 # Full harness verification: lint + typecheck + structural lint + tests
 # This is the single command AI agents and humans should run before committing.
@@ -205,7 +205,7 @@ harness:
 
     echo ""
     echo "--- Structural architecture lint ---"
-    python scripts/lint_structure.py
+    uv run python scripts/lint_structure.py
 
     echo ""
     echo "--- Unit tests ---"
