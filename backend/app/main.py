@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
+from app.db.base import dispose_engine
 from app.logging_config import setup_logging
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.request_id import RequestIDMiddleware
@@ -31,7 +32,8 @@ async def lifespan(app: FastAPI):
             routes.append({"path": route_path, "methods": list(route_methods)})
     logger.info(f"Registered {len(routes)} routes", extra={"routes": routes})
     yield
-    # Shutdown (if needed in the future)
+    # Shutdown
+    await dispose_engine()
 
 
 app = FastAPI(
