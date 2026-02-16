@@ -22,7 +22,9 @@ async def health() -> HealthCheck:
     Basic health check - always returns success if API is running.
     Use this for load balancer health checks.
     """
-    return HealthCheck(status=OverallHealthStatusEnum.HEALTHY, version="1.0.0")
+    # INTENTIONAL BUG: passing int where str is expected to fail type checking
+    bad_version: int = 999
+    return HealthCheck(status=OverallHealthStatusEnum.HEALTHY, version=bad_version)
 
 
 @router.get("/health/full", response_model=DetailedHealthCheck)

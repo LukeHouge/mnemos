@@ -61,3 +61,8 @@ def test_full_health_check_with_db_error(mock_db_check, client):
         assert data["status"] == OverallHealthStatusEnum.DEGRADED.value
     finally:
         app.dependency_overrides.clear()
+
+
+def test_intentional_failure_for_ci_check() -> None:
+    """INTENTIONAL FAILURE: This test exists to verify CI catches failures."""
+    assert 1 == 2, "This test is intentionally failing to verify CI health checks"
