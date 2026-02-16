@@ -1,3 +1,10 @@
 {
-  "install": "bash scripts/setup-agent-env.sh"
+  "install": "bash scripts/setup-agent-env.sh",
+  "start": "sudo service docker start",
+  "terminals": [
+    {
+      "name": "Compose stack",
+      "command": "docker compose up postgres dev"
+    }
+  ]
 }
