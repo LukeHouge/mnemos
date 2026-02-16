@@ -13,7 +13,7 @@ just lint-structure   # Structural architecture linter (runs locally)
 
 ## Local Variants (No Docker -- for Cloud Agents and CI)
 
-These run directly on the host without Docker. Environment setup is handled automatically by `scripts/setup-agent-env.sh` (called by `.cursor/setup.sh` and `.claude/settings.json`).
+These run directly on the host without Docker. Environment setup is handled automatically by `scripts/setup-agent-env.sh` (called by `.cursor/environment.json` install command and `.claude/settings.json` SessionStart hook).
 
 ```bash
 just harness          # Already runs locally -- no -local variant needed
@@ -81,4 +81,4 @@ just status           # Show service status
 bash scripts/setup-agent-env.sh   # Install uv, just, and all Python deps
 ```
 
-This is called automatically by `.cursor/setup.sh` (Cursor Cloud Agents) and `.claude/settings.json` (Claude Code). Run manually if needed.
+This is called automatically by `.cursor/environment.json` (Cursor Cloud Agents) and `.claude/settings.json` (Claude Code). Run manually if needed.

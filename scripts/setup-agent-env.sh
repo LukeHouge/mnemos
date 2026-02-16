@@ -3,7 +3,7 @@
 #
 # Installs all tools and dependencies needed to work on this repo.
 # Called automatically by:
-#   - Cursor Cloud Agents via .cursor/setup.sh
+#   - Cursor Cloud Agents via .cursor/environment.json "install" command
 #   - Claude Code via .claude/settings.json SessionStart hook
 #
 # Can also be run manually: bash scripts/setup-agent-env.sh
