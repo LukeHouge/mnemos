@@ -30,6 +30,7 @@ All project knowledge lives in `docs/`. Read these before making changes:
 - `docs/style-guide.md` - Code style, formatting, type hints, error handling
 - `docs/commands.md` - All available `just` commands
 - `docs/workflows.md` - Step-by-step workflows for common tasks
+- `docs/ci-and-agents.md` - CI health checks, agent permissions, branch protection
 
 ## Architecture Rules (Enforced)
 
