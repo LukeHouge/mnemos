@@ -72,7 +72,9 @@ def check_layer_violations(file: Path, tree: ast.AST) -> None:
 
         # Routes must not import from other route files
         if rel.startswith("routes/"):
-            if (".routes." in module or module.startswith("app.routes")) and module != f"app.{rel.replace('/', '.').removesuffix('.py')}":
+            if (
+                ".routes." in module or module.startswith("app.routes")
+            ) and module != f"app.{rel.replace('/', '.').removesuffix('.py')}":
                 add_error(
                     file,
                     lineno,
@@ -172,7 +174,13 @@ def lint_file(file: Path) -> None:
         source = file.read_text()
         tree = ast.parse(source, filename=str(file))
     except SyntaxError as e:
-        add_error(file, e.lineno or 1, "PARSE001", f"Syntax error: {e.msg}", "Fix the syntax error before continuing.")
+        add_error(
+            file,
+            e.lineno or 1,
+            "PARSE001",
+            f"Syntax error: {e.msg}",
+            "Fix the syntax error before continuing.",
+        )
         return
 
     check_layer_violations(file, tree)
