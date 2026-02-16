@@ -5,10 +5,10 @@ Personal RAG system for managing documents (receipts, manuals, PDFs) with intell
 ## Environment Setup (Automated)
 
 Agent environments are bootstrapped automatically:
-- **Cursor Cloud Agents**: `.cursor/setup.sh` runs on VM start
-- **Claude Code**: `.claude/settings.json` SessionStart hook runs on session start
+- **Cursor Cloud Agents**: `.cursor/environment.json` `install` command runs `scripts/setup-agent-env.sh` on VM setup (result is snapshotted for fast subsequent starts)
+- **Claude Code**: `.claude/settings.json` SessionStart hook runs `scripts/setup-agent-env.sh` on session start
 
-Both call the shared `scripts/setup-agent-env.sh` which installs `uv`, `just`, and all Python dependencies. Manual re-run: `bash scripts/setup-agent-env.sh`
+The script installs `uv`, `just`, and all Python dependencies. Manual re-run: `bash scripts/setup-agent-env.sh`
 
 ## Quick Reference
 

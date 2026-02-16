@@ -183,8 +183,8 @@ just test-local   # Run unit tests
 ### Cloud Agent Environment
 
 Agent environments are bootstrapped automatically via `scripts/setup-agent-env.sh`:
-- **Cursor Cloud Agents**: `.cursor/setup.sh` calls it on VM start
-- **Claude Code**: `.claude/settings.json` SessionStart hook calls it on session start
+- **Cursor Cloud Agents**: `.cursor/environment.json` `install` command runs it on VM setup (result is snapshotted)
+- **Claude Code**: `.claude/settings.json` SessionStart hook runs it on session start
 
 The script installs `uv`, `just`, and all Python dependencies. Use `just harness` (already runs locally) and `-local` command variants (e.g., `just check-local`, `just format-local`, `just test-local`) in agent environments since Docker is not available.
 
