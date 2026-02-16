@@ -6,5 +6,9 @@
       "name": "Compose stack",
       "command": "docker compose up postgres dev"
     }
-  ]
+  ],
+  "build": {
+    "context": ".",
+    "dockerfile": "Dockerfile"
+  }
 }
