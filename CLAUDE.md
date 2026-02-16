@@ -46,6 +46,18 @@ Models (app/models/)     Models (app/models/)
 - **Models**: Pydantic schemas only. No imports from routes or services.
 - **Middleware**: Request/response processing. No route/service imports.
 
+## Agent Boundaries (STRICT)
+
+Agents must NEVER perform these actions, even if technically possible:
+
+1. **NEVER merge a PR** — merging is always a human decision (`gh pr merge` is forbidden)
+2. **NEVER mark a PR as ready for review** — the author decides when it's ready (`gh pr ready` is forbidden)
+3. **NEVER approve or review a PR** — reviews are human-only
+4. **NEVER close or reopen issues or PRs** — lifecycle decisions belong to humans
+5. **NEVER push directly to `main`** — always work on feature branches
+
+Agents SHOULD: push code to feature branches, read CI results, iterate on fixes until checks pass, and report findings. Humans decide when to approve, merge, and release.
+
 ## Key Constraints
 
 1. No inline imports - all imports at file top

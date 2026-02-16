@@ -19,28 +19,45 @@ Two GitHub Actions workflows run on pull requests targeting `main`:
 - **pytest** — unit tests with coverage report
 - **Structural lint** — enforces architecture layer rules (Routes -> Services -> Models)
 
+## Agent Boundaries (STRICT POLICY)
+
+Regardless of what the token technically allows, agents must NEVER:
+
+1. **NEVER merge a PR** — merging is always a human decision (`gh pr merge` is forbidden)
+2. **NEVER mark a PR as ready for review** — the author decides when it's ready (`gh pr ready` is forbidden)
+3. **NEVER approve or review a PR** — reviews are human-only
+4. **NEVER close or reopen issues or PRs** — lifecycle decisions belong to humans
+5. **NEVER push directly to `main`** — always work on feature branches
+
+Agents SHOULD: push code to feature branches, read CI results, iterate on fixes until checks pass, and report findings. Humans decide when to approve, merge, and release.
+
+This policy is enforced at two layers:
+- **Instructions**: Agent rules in `.cursorrules`, `AGENTS.md`, and `CLAUDE.md` explicitly forbid these actions.
+- **Branch protection**: GitHub branch rules block merges without human approval as a backstop (see below).
+
 ## Cursor Cloud Agent Capabilities
 
 Cursor Cloud Agents run in ephemeral VMs with a GitHub App installation token (`ghs_*`). The token is auto-provisioned by the Cursor GitHub App — no manual configuration required.
 
 ### Agent Permission Matrix
 
-| Operation | Permission | Works? |
-|-----------|-----------|--------|
-| Push code | `contents: write` | Yes |
-| Read PRs, issues, CI runs | `metadata: read` | Yes |
-| View CI logs | `actions: read` | Yes |
-| Merge PRs | `contents: write` | Yes (if branch rules allow) |
-| Mark PR ready for review | GraphQL | Yes |
-| Create / update PRs | `pull_requests: write` | No — platform handles |
-| Comment on PRs | `issues: write` | No — platform handles |
-| Create reviews | `pull_requests: write` | No — platform handles |
+| Operation | Permission | Technically works? | Policy |
+|-----------|-----------|-------------------|--------|
+| Push to feature branches | `contents: write` | Yes | Allowed |
+| Read PRs, issues, CI runs | `metadata: read` | Yes | Allowed |
+| View CI logs | `actions: read` | Yes | Allowed |
+| Merge PRs | `contents: write` | Yes (if no branch rules) | **FORBIDDEN by policy** |
+| Mark PR ready for review | GraphQL | Yes | **FORBIDDEN by policy** |
+| Approve / review PRs | `pull_requests: write` | No (token lacks permission) | Forbidden |
+| Create / update PRs | `pull_requests: write` | No — platform handles | N/A |
+| Comment on PRs | `issues: write` | No — platform handles | N/A |
+| Push to `main` | `contents: write` | Yes (if no branch rules) | **FORBIDDEN by policy** |
 
 ### Agent vs Platform
 
 The agent and the Cursor platform are separate systems with different credentials:
 
-- **Agent** (this VM): Limited token. Pushes code, reads CI, can merge if allowed.
+- **Agent** (this VM): Limited token. Pushes code to feature branches and reads CI.
 - **Platform** (Cursor servers): Full GitHub App permissions. Creates PRs, posts comments, creates issues as `app/cursor`.
 
 When you @mention the Cursor bot on a PR comment:
@@ -87,20 +104,26 @@ Configure via GitHub → Settings → Branches → Add branch protection rule (o
 | **Do not allow bypassing** | Enabled | Applies to admins and apps too |
 | **Restrict who can push** | Optional | Limit direct push to specific teams |
 
-### What This Prevents
+### Defense in Depth
 
-With these rules, the agent **cannot**:
+Protection works at two layers:
 
-- Merge a PR without human approval (blocked by required reviews)
-- Merge a PR with failing CI (blocked by required status checks)
-- Mark a PR as reviewed/approved (token lacks `pull_requests: write`)
-- Push directly to main (blocked by require-PR rule)
+**Layer 1 — Agent policy** (`.cursorrules`, `AGENTS.md`, `CLAUDE.md`):
+Agents are instructed to never merge, mark ready, approve, or close PRs. This is the primary control and works regardless of branch rules.
 
-The agent **can still**:
+**Layer 2 — Branch protection** (GitHub settings):
+Even if an agent ignores instructions or a misconfigured automation tries to merge, GitHub blocks it:
 
-- Push to feature branches (necessary for its job)
+- Merge without human approval → blocked by required reviews
+- Merge with failing CI → blocked by required status checks
+- Push directly to main → blocked by require-PR rule
+- Approve own PR → blocked (token lacks `pull_requests: write`)
+
+**What agents CAN do** (by design):
+
+- Push to feature branches (necessary for their job)
 - Read CI results and iterate on fixes
-- Run `gh pr ready` (but the PR still needs human approval to merge)
+- Report findings in their output (platform posts as comments)
 
 ### Setup via GitHub CLI (Admin Required)
 
