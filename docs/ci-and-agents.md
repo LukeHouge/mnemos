@@ -166,3 +166,32 @@ To test the agent's ability to respond to PR comments:
 5. The platform posts the agent's response as a comment
 
 This flow exercises the full loop: webhook → agent → platform → comment reply.
+
+## Known Gotchas
+
+Things discovered through testing that future agents and contributors should know:
+
+### PR Creation
+
+- The Cursor platform auto-creates a **draft PR** the first time a `cursor/*` branch is pushed.
+- The agent token **cannot** create PRs itself (`gh pr create` returns 403).
+- If a PR is merged and the same branch name is reused, the platform **will not** auto-create a second PR. You must either use a new branch name or create the PR manually via the GitHub UI.
+- The agent **cannot** update PR titles or descriptions (`gh pr edit` returns 403). The platform controls PR metadata.
+
+### PR Comments
+
+- The agent token **cannot** post comments on PRs or issues (both REST and GraphQL return 403).
+- When the @cursor bot replies to your PR comments, the **platform** posts the comment using its own credentials — the agent just produces text output.
+- If you need the agent to communicate findings on a PR, it should include them in commit messages or its text output, which the platform will post.
+
+### Merge and Lifecycle
+
+- The agent token **can technically** merge PRs and mark them ready (via `contents: write` and GraphQL). This is why the Agent Boundaries policy exists — technical capability does not equal permission.
+- Branch protection rules are the hard backstop. Without them, nothing prevents the agent from merging.
+- The agent **cannot** approve PRs (token lacks `pull_requests: write`), so it cannot self-approve-and-merge even without branch protection.
+
+### Environment
+
+- The `ghs_*` token is a GitHub App installation token, not a personal access token. It has no OAuth scopes — permissions are defined by the GitHub App installation.
+- The token is ephemeral and scoped to the session. It is embedded in the git remote URL and configured for `gh` CLI automatically.
+- `CURSOR_AGENT=1` environment variable indicates the code is running in a cloud agent VM.

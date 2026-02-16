@@ -68,6 +68,17 @@ Agents SHOULD: push code to feature branches, read CI results, iterate on fixes 
 6. No secrets in code, no file paths in error responses
 7. Log errors with context, return generic messages to clients
 
+## GitHub Interaction (Cloud Agents)
+
+The agent token (`ghs_*`) is auto-provisioned. Key things to know:
+
+- **Can do**: `git push` to feature branches, `gh pr checks`, `gh run list`, `gh run view --log`
+- **Cannot do**: `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue create` (platform handles these)
+- **Must not do**: `gh pr merge`, `gh pr ready`, `gh pr review` (forbidden by policy — see Agent Boundaries above)
+- PR creation is handled by the Cursor platform automatically on first push of a `cursor/*` branch
+- PR comments are posted by the platform, not the agent — communicate findings in text output
+- See `docs/ci-and-agents.md` for the full permission matrix and known gotchas
+
 ## Verification Workflow
 
 Before every commit:
