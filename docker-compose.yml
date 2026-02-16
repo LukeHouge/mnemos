@@ -30,8 +30,9 @@ services:
     # Environment files loaded in order - later files override earlier ones
     # TODO: For production: change .env.dev to .env.prod
     env_file:
-      - ./backend/.env.dev
-      - ./backend/.env.secrets
+      - path: ./backend/.env.dev
+      - path: ./backend/.env.secrets
+        required: false
     depends_on:
       postgres:
         condition: service_healthy
@@ -53,8 +54,9 @@ services:
       - "8000:8000"  # Expose port for dev server
     # Environment files loaded in order - later files override earlier ones
     env_file:
-      - ./backend/.env.dev
-      - ./backend/.env.secrets
+      - path: ./backend/.env.dev
+      - path: ./backend/.env.secrets
+        required: false
     depends_on:
       postgres:
         condition: service_healthy
