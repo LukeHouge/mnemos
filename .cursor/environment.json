@@ -1,6 +1,6 @@
 {
   "install": "bash scripts/setup-agent-env.sh",
-  "start": "sudo service docker start",
+  "start": "sudo service containerd start && sudo service docker start && timeout 30 sh -c 'until docker info >/dev/null 2>&1; do sleep 1; done'",
   "terminals": [
     {
       "name": "Compose stack",
