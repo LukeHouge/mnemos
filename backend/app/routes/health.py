@@ -1,5 +1,4 @@
 import logging
-import os
 
 from fastapi import APIRouter, Depends
 
@@ -23,8 +22,7 @@ async def health() -> HealthCheck:
     Basic health check - always returns success if API is running.
     Use this for load balancer health checks.
     """
-    broken_version: int = 999
-    return HealthCheck(status=OverallHealthStatusEnum.HEALTHY, version=broken_version)
+    return HealthCheck(status=OverallHealthStatusEnum.HEALTHY, version="1.0.0")
 
 
 @router.get("/health/full", response_model=DetailedHealthCheck)
