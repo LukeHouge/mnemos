@@ -1,0 +1,7 @@
+{
+  "build": {
+    "dockerfile": "./backend/Dockerfile.dev",
+    "context": ".."
+  },
+  "features": {}
+}
