@@ -5,17 +5,17 @@ from fastapi.testclient import TestClient
 
 from app.config import settings
 from app.main import app
-from app.services import openai_service
+from app.services import image_service, openai_service
 
 
 @pytest.fixture(autouse=True)
-def clear_openai_singleton():
-    """Automatically clear OpenAI service singleton before and after each test."""
-    # Clear singleton before test to ensure fresh state
+def clear_service_singletons():
+    """Automatically clear service singletons before and after each test."""
     openai_service._openai_service = None
+    image_service._image_service = None
     yield
-    # Clear singleton after test to prevent test pollution
     openai_service._openai_service = None
+    image_service._image_service = None
 
 
 @pytest.fixture

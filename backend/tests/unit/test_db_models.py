@@ -2,7 +2,7 @@
 
 import uuid
 
-from app.db.models import Base, Document, DocumentTag, Tag, User
+from app.db.models import Base, Document, DocumentTag, Image, ImageTag, Tag, User
 
 
 def test_user_model_has_correct_tablename():
@@ -25,10 +25,20 @@ def test_document_tag_model_has_correct_tablename():
     assert DocumentTag.__tablename__ == "document_tags"
 
 
+def test_image_model_has_correct_tablename():
+    """Test Image model table name."""
+    assert Image.__tablename__ == "images"
+
+
+def test_image_tag_model_has_correct_tablename():
+    """Test ImageTag association table name."""
+    assert ImageTag.__tablename__ == "image_tags"
+
+
 def test_base_metadata_contains_all_tables():
     """Test that Base metadata knows about all tables."""
     table_names = set(Base.metadata.tables.keys())
-    expected = {"users", "documents", "tags", "document_tags"}
+    expected = {"users", "documents", "tags", "document_tags", "images", "image_tags"}
     assert expected.issubset(table_names)
 
 
@@ -118,3 +128,50 @@ def test_document_owner_id_has_foreign_key():
     fk = list(owner_col.foreign_keys)
     assert len(fk) == 1
     assert fk[0].target_fullname == "users.id"
+
+
+def test_image_columns_exist():
+    """Test that Image model has expected columns."""
+    column_names = {col.name for col in Image.__table__.columns}
+    expected = {
+        "id",
+        "filename",
+        "description",
+        "mime_type",
+        "file_size_bytes",
+        "image_data",
+        "extracted_text",
+        "owner_id",
+        "created_at",
+        "updated_at",
+    }
+    assert expected == column_names
+
+
+def test_image_tags_columns_exist():
+    """Test that ImageTag model has expected columns."""
+    column_names = {col.name for col in ImageTag.__table__.columns}
+    expected = {"image_id", "tag_id"}
+    assert expected == column_names
+
+
+def test_image_owner_id_has_foreign_key():
+    """Test that image owner_id references users table."""
+    owner_col = Image.__table__.columns["owner_id"]
+    fk = list(owner_col.foreign_keys)
+    assert len(fk) == 1
+    assert fk[0].target_fullname == "users.id"
+
+
+def test_image_repr():
+    """Test Image string representation."""
+    img = Image(
+        id=uuid.uuid4(),
+        filename="photo.jpg",
+        mime_type="image/jpeg",
+        file_size_bytes=2048,
+        image_data=b"\x00",
+        owner_id=uuid.uuid4(),
+    )
+    assert "photo.jpg" in repr(img)
+    assert "Image" in repr(img)
