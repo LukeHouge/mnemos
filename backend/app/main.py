@@ -13,7 +13,7 @@ from app.middleware.logging import LoggingMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
 from app.models.errors import ErrorDetail, ErrorResponse
-from app.routes import ai, health
+from app.routes import ai, health, users
 
 # Setup logging
 setup_logging(log_level="DEBUG" if settings.DEBUG else "INFO")
@@ -112,6 +112,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 # Include routers
 app.include_router(health.router)
 app.include_router(ai.router)
+app.include_router(users.router)
 
 
 @app.get("/", tags=["Root"])
