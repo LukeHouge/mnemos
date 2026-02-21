@@ -65,3 +65,14 @@ just sync-deps             # Sync lock file
 2. Check if it's a mock issue (wrong patch path)
 3. Check if it's a fixture issue (missing singleton clear)
 4. Check if structural rules changed: `just lint-structure`
+
+## Monitoring CI from Cloud Agents
+
+Cloud agents can read CI results and iterate on fixes. See [docs/ci-and-agents.md](ci-and-agents.md) for the full permission model and branch protection setup.
+
+```bash
+gh pr checks <pr-number>               # Quick pass/fail overview
+gh run list --branch <branch>           # List CI runs for a branch
+gh run view <run-id> --json jobs        # Structured job results
+gh run view <run-id> --log              # Full CI logs
+```

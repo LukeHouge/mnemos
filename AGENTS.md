@@ -30,6 +30,7 @@ All project knowledge lives in `docs/`. Read these before making changes:
 - `docs/style-guide.md` - Code style, formatting, type hints, error handling
 - `docs/commands.md` - All available `just` commands
 - `docs/workflows.md` - Step-by-step workflows for common tasks
+- `docs/ci-and-agents.md` - CI health checks, agent permissions, branch protection
 
 ## Architecture Rules (Enforced)
 
@@ -47,6 +48,18 @@ Models (app/models/)     Models (app/models/)
 - **Models**: Pydantic schemas only. No imports from routes or services.
 - **Middleware**: Request/response processing. No route/service imports.
 
+## Agent Boundaries (STRICT)
+
+Agents must NEVER perform these actions, even if technically possible:
+
+1. **NEVER merge a PR** — merging is always a human decision (`gh pr merge` is forbidden)
+2. **NEVER mark a PR as ready for review** — the author decides when it's ready (`gh pr ready` is forbidden)
+3. **NEVER approve or review a PR** — reviews are human-only
+4. **NEVER close or reopen issues or PRs** — lifecycle decisions belong to humans
+5. **NEVER push directly to `main`** — always work on feature branches
+
+Agents SHOULD: push code to feature branches, read CI results, iterate on fixes until checks pass, and report findings. Humans decide when to approve, merge, and release.
+
 ## Key Constraints
 
 1. No inline imports - all imports at file top
@@ -55,6 +68,17 @@ Models (app/models/)     Models (app/models/)
 4. Mock at service layer in tests, not at route layer
 5. One concept per test, descriptive names
 6. No secrets in code, no file paths in error responses
+
+## GitHub Interaction (Cloud Agents)
+
+The agent token (`ghs_*`) is auto-provisioned. Key things to know:
+
+- **Can do**: `git push` to feature branches, `gh pr checks`, `gh run list`, `gh run view --log`
+- **Cannot do**: `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue create` (platform handles these)
+- **Must not do**: `gh pr merge`, `gh pr ready`, `gh pr review` (forbidden by policy — see Agent Boundaries above)
+- PR creation is handled by the Cursor platform automatically on first push of a `cursor/*` branch
+- PR comments are posted by the platform, not the agent — communicate findings in text output
+- See `docs/ci-and-agents.md` for the full permission matrix and known gotchas
 
 ## Verification Workflow
 
